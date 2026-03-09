@@ -1,0 +1,144 @@
+.container {
+  overflow: hidden;
+  color: var(--chart-text);
+  background: var(--chart-background);
+  border: 1px solid var(--chart-border);
+  border-radius: 12px;
+}
+
+.wrap {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 9;
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--chart-text);
+  pointer-events: none;
+  background: var(--chart-surface);
+  border: 1px solid var(--chart-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
+  opacity: 0;
+}
+
+.loading {
+  padding: 14px 20px;
+  font-size: 12px;
+  color: var(--chart-text-muted);
+}
+
+.cargoPopup {
+  position: absolute;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 280px;
+  max-height: 280px;
+  padding: 10px;
+  background: color-mix(in srgb, var(--chart-surface) 94%, transparent);
+  border: 1px solid var(--chart-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 22px rgb(0 0 0 / 18%);
+}
+
+.cargoPopupHeader {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cargoPopupPortName {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--chart-text);
+  letter-spacing: 0.01em;
+}
+
+.cargoPopupClose {
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  color: var(--chart-text-secondary);
+  text-align: center;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--chart-surface) 70%, var(--chart-border));
+  border: none;
+  border-radius: 4px;
+}
+
+.cargoPopupMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--chart-text-muted);
+}
+
+.cargoPopupEmpty {
+  padding: 4px 0;
+  font-size: 11px;
+  color: var(--chart-text-muted);
+}
+
+.portBarChart {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 0;
+}
+
+.portBarChartRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 16px;
+}
+
+.portBarChartTrack {
+  flex: 1;
+  height: 14px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--chart-border) 72%, transparent);
+  border-radius: 4px;
+}
+
+.portBarChartFill {
+  display: flex;
+  align-items: center;
+  min-width: 3px;
+  height: 100%;
+  padding-left: 4px;
+  overflow: hidden;
+  cursor: default;
+  border-radius: 4px;
+  transition: filter 0.12s ease;
+}
+
+.portBarChartFill:hover {
+  filter: brightness(1.08);
+}
+
+.portBarChartBarLabel {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgb(255 255 255 / 92%);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.portBarChartValue {
+  flex-shrink: 0;
+  width: 88px;
+  font-size: 10px;
+  color: var(--chart-text-secondary);
+  text-align: right;
+}

@@ -1,0 +1,154 @@
+/**
+ * BargeCargoGanttView 可视化配置
+ *
+ * 说明：
+ * - 本文件仅放置“视觉层”参数（尺寸、颜色、线型、透明度、文字样式阈值）。
+ * - 业务计算（如事件转换、ETD 分组）不应放在这里。
+ * - 所有值均为当前设计稿（gantt.html）与现有业务数据折中后的默认值，可按需微调。
+ */
+export const BARGE_CARGO_GANTT_CONFIG = {
+  /**
+   * 画布与布局参数
+   */
+  layout: {
+    /** 左侧船舶标签栏宽度（px） */
+    labelWidth: 0,
+    /** 时间轴上方港口货箱变化区最小高度（px），实际高度按港口数动态扩展 */
+    portPanelHeight: 96,
+    /** 港口货箱变化区每行高度（px），每个港口独占一行 */
+    portRowHeight: 48,
+    /** 单条船舶轨道高度（px） */
+    rowHeight: 92,
+    /** 顶部时间轴头部高度（px） */
+    headerHeight: 32,
+    /** 画布底部内边距（px） */
+    paddingBottom: 16,
+    /** 画布右侧内边距（px） */
+    paddingRight: 20,
+    /** 装卸矩形块高度（px） */
+    blockHeight: 30,
+    /** 装卸块最小高度（px），用于小货量场景保持可见 */
+    minBlockHeight: 8,
+    /** 装卸块最大高度占轨道高度比例（不超过 0.5） */
+    maxBlockHeightRatio: 0.5,
+    /** 装卸块圆角（px） */
+    blockRadius: 0,
+    /** 装卸块最小视觉宽度（px） */
+    minBlockWidth: 8
+  },
+
+  /**
+   * 航行段圆环图参数
+   */
+  donut: {
+    /** 外环最小半径（px） */
+    minOuterRadius: 6,
+    /** 外环最大半径（px） */
+    maxOuterRadius: 36,
+    /** 外环半径占单条驳船轨道高度比例 */
+    outerRadiusRowHeightRatio: 0.24,
+    /** 当航行段宽度 >= outerRadius * minSegmentWidthFactor 才绘制圆环 */
+    minSegmentWidthFactor: 2.8,
+    /** 多分片之间的角度间隔（rad） */
+    segmentGap: 0.04,
+    /** 扇区圆角（px） */
+    cornerRadius: 1
+  },
+
+  /**
+   * 时间轴参数（按日期色带）
+   */
+  axis: {
+    /** 天级分段间隔（小时） */
+    dayEveryHours: 24,
+    /** 日期色带顶部偏移（px） */
+    bandTop: 4,
+    /** 日期色带距离头部底线的预留（px） */
+    bandBottomGap: 12,
+    /** 日期文字在色带内的左侧偏移（px） */
+    dayLabelOffsetX: 6,
+    /** 日期文字字号（px） */
+    dayLabelFontSize: 10,
+    /** 日期文字颜色 */
+    dayLabelColor: '#4a4540',
+    /** 日期色带边框颜色（同时用于头部分隔线） */
+    borderColor: '#d8d5ce',
+    /** 日期色带边框线宽（px） */
+    borderWidth: 0.8
+  },
+
+  /**
+   * 港口驻留背景区块（按到港时段绘制）
+   */
+  portBand: {
+    /** 区块在轨道内的上下留白（px） */
+    yInset: 2,
+    /** 当前高亮港口 / 无筛选时的透明度 */
+    activeOpacity: 0.82,
+    /** 非高亮港口时的透明度 */
+    inactiveOpacity: 0.2,
+    /** 背景区块边框宽度（px） */
+    strokeWidth: 0.8,
+    /** 不同港口轮转使用的柔和配色（与当前米色系底图匹配） */
+    palette: [
+      '#cfe4f7',
+      '#cfead3',
+      '#f7dfc6',
+      '#ddd4f2',
+      '#f5d2de',
+      '#cbe8ea',
+      '#f2e4b8',
+      '#ced8f6',
+      '#f0d7c6',
+      '#d2e3d0'
+    ],
+    /** 兜底颜色（超出调色板或港口缺失） */
+    fallbackColor: '#e8e4dc'
+  },
+
+  /**
+   * 调色与透明度
+   */
+  colors: {
+    /** 装货主色 */
+    load: '#2563a8',
+    /** 卸货主色（同时用于 ETD 红线） */
+    unload: '#b34a2a',
+    /** 中转连线颜色 */
+    transship: '#c47a1e',
+    /** 航行线颜色 */
+    sail: '#7a7068',
+
+    /** 圆环图：大箱颜色 */
+    cargoBig: '#5a7fa8',
+    /** 圆环图：普箱颜色 */
+    cargoNormal: '#6a9a6a',
+    /** 圆环图：危险品颜色 */
+    cargoDanger: '#b85050',
+
+    /** 交替日背景色（偶数日） */
+    dayBandEven: '#f8f7f4',
+    /** 交替日背景色（奇数日） */
+    dayBandOdd: '#f2f0ec'
+  },
+
+  /**
+   * 渐变与线型细节
+   */
+  drawing: {
+    /** 装货块渐变色（上） */
+    loadGradientTop: '#4a80c4',
+    /** 装货块渐变色（下） */
+    loadGradientBottom: '#1d4f8a',
+    /** 卸货块渐变色（上） */
+    unloadGradientTop: '#c96040',
+    /** 卸货块渐变色（下） */
+    unloadGradientBottom: '#8a3018',
+    /** ETD 线虚线样式 */
+    etdDashArray: '4 3',
+    /** 中转连线虚线样式 */
+    transshipDashArray: '0,0',
+    /** 非装卸事件（航行/等待/收尾）统一水平实线宽度（px） */
+    nonCargoLineWidth: 1.2
+  }
+} as const

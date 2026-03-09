@@ -1,0 +1,269 @@
+:root {
+  --bg: #f8f7f4;
+  --surface: #ffffff;
+  --border: #d8d5ce;
+  --text: #2a2520;
+  --text-dim: #8a8278;
+  --text-mid: #5a5550;
+}
+
+.container {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.wrap {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+
+.tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text);
+  opacity: 0;
+  z-index: 9;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.loading {
+  padding: 14px 20px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.cargoPopup {
+  position: absolute;
+  width: 280px;
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+  z-index: 8;
+}
+
+.cargoPopupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cargoPopupPortName {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+
+.cargoPopupTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.cargoPopupClose {
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 3px;
+  background: #efece6;
+  color: #6a635b;
+  line-height: 18px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.cargoPopupMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.cargoPopupStats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-mid);
+}
+
+.cargoPopupList {
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 2px;
+}
+
+.cargoPopupItem {
+  border: 1px solid #ebe7df;
+  border-radius: 4px;
+  padding: 6px;
+  background: #faf9f6;
+}
+
+.cargoPopupItemHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cargoPopupMainline {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4a4540;
+}
+
+.cargoPopupMetrics {
+  font-size: 10px;
+  color: #7c746a;
+}
+
+.cargoPopupSamples {
+  margin-top: 4px;
+  font-size: 10px;
+  color: #6c665e;
+  line-height: 1.45;
+  word-break: break-all;
+}
+
+.cargoPopupEmpty {
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 4px 0;
+}
+
+/* ── 干线码头矩形离散比例图 ──────────────────────────── */
+
+.portProportionBar {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+  height: 24px;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.portProportionSegment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3px;
+  height: 100%;
+  overflow: hidden;
+  transition: filter 0.12s ease;
+  cursor: default;
+}
+
+.portProportionSegment:hover {
+  filter: brightness(1.12);
+}
+
+.portProportionLabel {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  padding: 0 3px;
+}
+
+/* ── 干线码头横向条形图 ─────────────────────────────── */
+
+.portBarChart {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 1px 0;
+}
+
+.portBarChartRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 16px;
+}
+
+.portBarChartLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 58px;
+  flex-shrink: 0;
+}
+
+.portBarChartDot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.portBarChartLabelText {
+  font-size: 10px;
+  font-weight: 600;
+  color: #4a4540;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portBarChartTrack {
+  flex: 1;
+  height: 14px;
+  background: #edeae3;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.portBarChartFill {
+  height: 100%;
+  border-radius: 2px;
+  min-width: 3px;
+  cursor: default;
+  transition: filter 0.12s ease;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding-left: 4px;
+}
+
+.portBarChartFill:hover {
+  filter: brightness(1.1);
+}
+
+.portBarChartBarLabel {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
+.portBarChartValue {
+  flex-shrink: 0;
+  width: 80px;
+  font-size: 10px;
+  color: #7c746a;
+  text-align: right;
+}

@@ -1,0 +1,260 @@
+.shell {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.stage {
+  position: relative;
+  min-height: 640px;
+  overflow: hidden;
+  background: var(--color-surface-strong);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+}
+
+.stageCompact {
+  min-height: 500px;
+}
+
+.map {
+  width: 100%;
+  min-height: 640px;
+}
+
+.mapCompact {
+  min-height: 500px;
+}
+
+.overlayTop,
+.overlayBottom {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+
+.overlayTop {
+  top: 1rem;
+  left: 1rem;
+  flex-wrap: wrap;
+}
+
+.overlayBottom {
+  right: 1rem;
+  bottom: 1rem;
+  justify-content: flex-end;
+}
+
+.infoCard,
+.hintCard,
+.summary {
+  background: color-mix(in srgb, var(--color-surface-strong) 82%, transparent);
+  backdrop-filter: blur(14px);
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  box-shadow: 0 16px 40px rgb(15 23 42 / 10%);
+}
+
+.infoCard,
+.hintCard {
+  padding: 0.75rem 0.9rem;
+  border-radius: 16px;
+}
+
+.infoLabel,
+.hintTitle,
+.summaryTitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.infoValue,
+.hintText,
+.summaryText {
+  margin-top: 0.25rem;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+.infoValue {
+  font-size: 0.9rem;
+}
+
+.hintCard {
+  max-width: 21rem;
+}
+
+.hintText,
+.summaryText {
+  font-size: 0.88rem;
+}
+
+.statusMask {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  color: var(--color-text);
+  text-align: center;
+  background: color-mix(in srgb, var(--color-surface-strong) 80%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.summary {
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+}
+
+.marker {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0;
+  color: var(--color-text);
+  cursor: pointer;
+  background: none;
+  border: 0;
+}
+
+.markerDot {
+  position: relative;
+  width: 0.85rem;
+  height: 0.85rem;
+  background: var(--color-accent);
+  border: 2px solid color-mix(in srgb, var(--color-surface-strong) 90%, white);
+  border-radius: 999px;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-accent) 16%, transparent);
+}
+
+.markerLabel {
+  padding: 0.2rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--color-surface-strong) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
+  border-radius: 999px;
+  box-shadow: 0 10px 24px rgb(15 23 42 / 10%);
+}
+
+.markerActive .markerDot {
+  box-shadow: 0 0 0 9px color-mix(in srgb, var(--color-accent) 24%, transparent);
+  transform: scale(1.12);
+}
+
+.markerActive .markerLabel {
+  color: var(--color-accent);
+  border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+}
+
+.marker:hover .markerLabel {
+  color: var(--color-accent);
+}
+
+.popup :global(.maplibregl-popup-content) {
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.popup :global(.maplibregl-popup-tip) {
+  border-top-color: color-mix(in srgb, var(--color-surface-strong) 94%, transparent);
+}
+
+.popupCard {
+  min-width: 11rem;
+  padding: 0.85rem 0.95rem;
+  background: color-mix(in srgb, var(--color-surface-strong) 94%, transparent);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgb(15 23 42 / 16%);
+}
+
+.popupCode {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.popupName {
+  margin-top: 0.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.popupMeta {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.stage :global(.maplibregl-ctrl-group) {
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-surface-strong) 90%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgb(15 23 42 / 12%);
+}
+
+.stage :global(.maplibregl-ctrl-group button) {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--color-border) 88%, transparent);
+}
+
+.stage :global(.maplibregl-ctrl-group button:hover) {
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+}
+
+.stage :global(.maplibregl-ctrl-group button .maplibregl-ctrl-icon) {
+  filter: none;
+  opacity: 0.8;
+}
+
+.stage :global(.maplibregl-attrib) {
+  color: var(--color-muted);
+  background: color-mix(in srgb, var(--color-surface-strong) 84%, transparent);
+}
+
+.stage :global(.maplibregl-attrib a) {
+  color: inherit;
+}
+
+@media (width <= 768px) {
+  .stage,
+  .map {
+    min-height: 520px;
+  }
+
+  .stageCompact,
+  .mapCompact {
+    min-height: 400px;
+  }
+
+  .overlayTop,
+  .overlayBottom {
+    right: 0.75rem;
+    left: 0.75rem;
+  }
+
+  .overlayBottom {
+    bottom: 0.75rem;
+    justify-content: flex-start;
+  }
+
+  .markerLabel {
+    display: none;
+  }
+}

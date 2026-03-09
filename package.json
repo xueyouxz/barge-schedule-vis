@@ -21,8 +21,14 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "src/**/*.{ts,tsx}": ["eslint --max-warnings=0", "prettier --write"],
-    "src/**/*.{css,less,scss}": ["stylelint --fix", "prettier --write"]
+    "src/**/*.{ts,tsx}": [
+      "eslint --max-warnings=0 --no-warn-ignored",
+      "prettier --write"
+    ],
+    "src/**/*.{css,less,scss}": [
+      "stylelint --fix",
+      "prettier --write"
+    ]
   },
   "config": {
     "commitizen": {
@@ -34,6 +40,7 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.10.1",
+    "d3": "^7.9.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-redux": "^9.2.0",
@@ -43,6 +50,7 @@
     "@commitlint/cli": "^19.6.0",
     "@commitlint/config-conventional": "^19.6.0",
     "@eslint/js": "^9.18.0",
+    "@types/d3": "^7.4.3",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

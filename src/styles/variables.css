@@ -1,9 +1,80 @@
-:root {
+:root,
+:root[data-theme='light'] {
+  --color-background: #f3f7fb;
+  --color-surface: rgb(255 255 255 / 72%);
+  --color-surface-strong: #fff;
+  --color-shell-background: linear-gradient(180deg, #fffdf8 0%, #f4f7fb 100%);
+  --color-shell-glow-primary: rgb(102 209 255 / 18%);
+  --color-shell-glow-secondary: rgb(255 160 0 / 14%);
   --color-text: #14213d;
   --color-muted: #526071;
   --color-accent: #0f766e;
   --color-border: rgb(148 163 184 / 24%);
-  --color-surface: rgb(255 255 255 / 72%);
+  --chart-background: #f8f7f4;
+  --chart-surface: #fff;
+  --chart-border: #d8d5ce;
+  --chart-text: #2a2520;
+  --chart-text-muted: #8a8278;
+  --chart-text-secondary: #5a5550;
+  --chart-grid: rgb(90 85 80 / 12%);
+  --chart-port-panel-bg: #f3efe8;
+  --chart-day-band-even: rgb(255 255 255 / 92%);
+  --chart-day-band-odd: rgb(246 243 238 / 92%);
+  --chart-grid-line-color: #d8d1c4;
+  --chart-axis-label-color: #5f584f;
+  --chart-row-background-even: #f8f7f4;
+  --chart-row-background-odd: #f2f0ec;
+  --chart-sail: #546579;
+  --chart-load: #1d4f8a;
+  --chart-unload: #8a3018;
+  --chart-transship: #a67c00;
+  --chart-cargo-big: #6b9bd2;
+  --chart-cargo-normal: #5fa36a;
+  --chart-cargo-danger: #cf5c5c;
+  --chart-port-band-fallback: #d8d5ce;
+  --chart-load-gradient-top: #4a80c4;
+  --chart-load-gradient-bottom: #1d4f8a;
+  --chart-unload-gradient-top: #c96040;
+  --chart-unload-gradient-bottom: #8a3018;
   --font-display: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', palatino, serif;
   --font-body: 'Avenir Next', 'Segoe UI', sans-serif;
+}
+
+:root[data-theme='dark'] {
+  --color-background: #0f172a;
+  --color-surface: rgb(15 23 42 / 72%);
+  --color-surface-strong: #162033;
+  --color-shell-background: linear-gradient(180deg, #101724 0%, #0f172a 100%);
+  --color-shell-glow-primary: rgb(56 189 248 / 14%);
+  --color-shell-glow-secondary: rgb(251 191 36 / 10%);
+  --color-text: #e6edf7;
+  --color-muted: #a2b0c3;
+  --color-accent: #34d399;
+  --color-border: rgb(148 163 184 / 24%);
+  --chart-background: #141a22;
+  --chart-surface: #1b2330;
+  --chart-border: #344052;
+  --chart-text: #edf2f8;
+  --chart-text-muted: #9fb0c3;
+  --chart-text-secondary: #c3cfdd;
+  --chart-grid: rgb(195 207 221 / 14%);
+  --chart-port-panel-bg: #182130;
+  --chart-day-band-even: rgb(34 45 62 / 92%);
+  --chart-day-band-odd: rgb(24 33 48 / 92%);
+  --chart-grid-line-color: #42516a;
+  --chart-axis-label-color: #d7e0ec;
+  --chart-row-background-even: #141a22;
+  --chart-row-background-odd: #1a212c;
+  --chart-sail: #8ea0b8;
+  --chart-load: #63a4ff;
+  --chart-unload: #ff9b7a;
+  --chart-transship: #f2c94c;
+  --chart-cargo-big: #7fb3ff;
+  --chart-cargo-normal: #7bd88f;
+  --chart-cargo-danger: #ff8d8d;
+  --chart-port-band-fallback: #5a6678;
+  --chart-load-gradient-top: #7fb3ff;
+  --chart-load-gradient-bottom: #2f6fb8;
+  --chart-unload-gradient-top: #ffad8d;
+  --chart-unload-gradient-bottom: #c55d3d;
 }

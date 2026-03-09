@@ -1,0 +1,45 @@
+.container {
+  overflow: auto hidden;
+  color: var(--chart-text);
+  background: var(--chart-background);
+  border: 1px solid var(--chart-border);
+  border-radius: 12px;
+}
+
+.state,
+.stateError {
+  padding: 24px;
+  font-size: 14px;
+}
+
+.state {
+  color: var(--chart-text-muted);
+}
+
+.stateError {
+  color: #c0392b;
+}
+
+.svg {
+  display: block;
+}
+
+.portLabel {
+  font-size: 14px;
+  font-weight: 700;
+  fill: var(--chart-text);
+}
+
+.countLabel {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--chart-text);
+  stroke: rgb(255 255 255 / 78%);
+  stroke-linejoin: round;
+  stroke-width: 2px;
+  paint-order: stroke;
+}
+
+:global(:root[data-theme='dark']) .countLabel {
+  stroke: rgb(15 23 42 / 70%);
+}
