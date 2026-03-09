@@ -1,28 +1,28 @@
-# React Feature Architecture Template
+# 驳船调度可视化分析系统
 
-React 19 + Vite 7 + TypeScript template with a feature-based directory structure and AI workflow guardrails.
+基于 React 19 + Vite 7 + TypeScript 的前端项目骨架，面向驳船调度场景，支持后续建设调度看板、计划评估和时空分析等能力。
 
-## Structure
+## 项目定位
+
+本仓库已完成模板去品牌化初始化，当前阶段目标是：
+
+- 提供稳定的 feature-based 前端架构基座
+- 明确驳船调度分析系统的首页定位和模块规划
+- 为后续业务功能开发（数据接入、可视化、分析）预留结构
+
+## 目录结构
 
 ```text
 src/
-├── app/
-├── assets/
-├── features/
-├── layouts/
-├── shared/
-└── styles/
+├── app/        # 应用入口、路由、provider
+├── assets/     # 构建期静态资源
+├── features/   # 按业务域组织功能模块
+├── layouts/    # 页面壳层与布局组件
+├── shared/     # 跨模块复用能力
+└── styles/     # 全局样式与变量
 ```
 
-## AI Workflow Files
-
-- `.claude/`: Claude Code rules, hooks and slash commands
-- `.cursorrules`: Cursor rules
-- `.windsurfrules`: Windsurf rules
-- `.github/copilot-instructions.md`: Copilot repository instructions
-- `docs/prompts/`: reusable prompting templates
-
-## Commands
+## 开发命令
 
 ```bash
 pnpm install
@@ -30,3 +30,9 @@ pnpm dev
 pnpm lint
 pnpm build
 ```
+
+## 当前状态
+
+- 首页已替换为“驳船调度可视化分析系统”业务占位内容
+- 模板默认文案已移除（标题、包信息、README、环境变量示例）
+- 保持现有 feature-based 架构，便于后续按模块扩展

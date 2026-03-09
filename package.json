@@ -1,8 +1,8 @@
 {
-  "name": "template",
+  "name": "barge-schedule-vis",
   "private": true,
   "version": "0.0.0",
-  "description": "react19+vite7+ts",
+  "description": "Barge scheduling visualization and analysis frontend",
   "type": "module",
   "author": "xyxz",
   "engines": {

@@ -1,240 +1,74 @@
-import { useState } from 'react'
 import styles from './HomePage.module.css'
 
-type TreeNode = {
-  id: string
-  name: string
-  path: string
+type ModuleItem = {
   title: string
   description: string
-  children?: TreeNode[]
 }
 
-const treeData: TreeNode[] = [
+const coreModules: ModuleItem[] = [
   {
-    id: 'src',
-    name: 'src',
-    path: 'src/',
-    title: '源码目录',
-    description: '承载前端应用的主要实现，是项目中最核心的业务与基础代码所在位置。',
-    children: [
-      {
-        id: 'src-app',
-        name: 'app',
-        path: 'src/app/',
-        title: '应用启动层',
-        description: '集中管理应用入口、路由配置和全局 Provider，是应用的装配与启动中心。'
-      },
-      {
-        id: 'src-features',
-        name: 'features',
-        path: 'src/features/',
-        title: '功能模块层',
-        description: '按业务域拆分组件、hooks、api、store 和 types，保证功能代码自包含且可扩展。'
-      },
-      {
-        id: 'src-shared',
-        name: 'shared',
-        path: 'src/shared/',
-        title: '共享基础层',
-        description: '存放跨功能复用的状态管理基建、类型、常量和基础工具，避免重复实现。'
-      },
-      {
-        id: 'src-layouts',
-        name: 'layouts',
-        path: 'src/layouts/',
-        title: '布局层',
-        description: '负责页面壳层、导航和路由嵌套结构，将页面骨架与业务内容分离。'
-      },
-      {
-        id: 'src-assets',
-        name: 'assets',
-        path: 'src/assets/',
-        title: '资源目录',
-        description: '保存需要经过 Vite 构建处理的图片、图标、字体等资源文件。'
-      },
-      {
-        id: 'src-styles',
-        name: 'styles',
-        path: 'src/styles/',
-        title: '全局样式层',
-        description: '定义设计变量、基础 reset 和全局样式约定，不承载具体业务逻辑。'
-      }
-    ]
+    title: '调度总览看板',
+    description: '统一呈现船舶、航次、泊位和任务状态，支持按时间窗口快速定位调度压力点。'
   },
   {
-    id: 'public',
-    name: 'public',
-    path: 'public/',
-    title: '公开静态资源',
-    description: '放置无需构建处理、直接以原路径暴露给浏览器访问的静态文件。'
+    title: '时空可视化分析',
+    description: '以时间轴与线路视图展示调度执行过程，辅助识别冲突、等待与资源利用率。'
   },
   {
-    id: 'claude',
-    name: '.claude',
-    path: '.claude/',
-    title: 'Claude 配置',
-    description: '定义 Claude Code 的规则、slash commands 和 hooks，约束 AI 生成代码的行为。'
+    title: '计划评估与对比',
+    description: '支持对不同调度方案进行关键指标对比，为运营决策提供量化依据。'
   },
   {
-    id: 'docs-prompts',
-    name: 'docs/prompts',
-    path: 'docs/prompts/',
-    title: 'Prompt 模板库',
-    description: '沉淀常见开发任务的提示词模板，提升 Vibe Coding 的一致性与复用率。'
-  },
-  {
-    id: 'github-workflows',
-    name: '.github/workflows',
-    path: '.github/workflows/',
-    title: 'CI 配置',
-    description: '通过自动化流程执行安装、lint 和 build，保证模板在提交与合并前可验证。'
+    title: '异常事件追踪',
+    description: '记录延误、拥堵、设备异常等事件并关联上下游影响，提升调度闭环效率。'
   }
 ]
 
-const nodeMap = new Map<string, TreeNode>()
-
-function collectNodes(nodes: TreeNode[]) {
-  nodes.forEach(node => {
-    nodeMap.set(node.id, node)
-
-    if (node.children) {
-      collectNodes(node.children)
-    }
-  })
-}
-
-collectNodes(treeData)
-
-type TreeItemProps = {
-  expandedIds: string[]
-  level?: number
-  nodes: TreeNode[]
-  onSelect: (id: string) => void
-  onToggle: (id: string) => void
-  selectedId: string
-}
-
-function TreeItems({
-  expandedIds,
-  level = 0,
-  nodes,
-  onSelect,
-  onToggle,
-  selectedId
-}: TreeItemProps) {
-  return (
-    <ul className={styles.treeList}>
-      {nodes.map(node => {
-        const isExpanded = expandedIds.includes(node.id)
-        const hasChildren = Boolean(node.children?.length)
-        const isSelected = selectedId === node.id
-
-        return (
-          <li key={node.id} className={styles.treeItem}>
-            <div
-              className={styles.treeRow}
-              style={{ ['--level' as string]: level } as React.CSSProperties}
-            >
-              {hasChildren ? (
-                <button
-                  type='button'
-                  className={styles.treeToggle}
-                  aria-label={isExpanded ? `收起 ${node.name}` : `展开 ${node.name}`}
-                  aria-expanded={isExpanded}
-                  onClick={() => onToggle(node.id)}
-                >
-                  <span className={isExpanded ? styles.chevronExpanded : styles.chevron} />
-                </button>
-              ) : (
-                <span className={styles.treeDot} aria-hidden='true' />
-              )}
-
-              <button
-                type='button'
-                className={isSelected ? styles.treeButtonActive : styles.treeButton}
-                onClick={() => onSelect(node.id)}
-              >
-                <span className={styles.nodeName}>{node.name}</span>
-                <span className={styles.nodePath}>{node.path}</span>
-              </button>
-            </div>
-
-            {hasChildren && isExpanded ? (
-              <TreeItems
-                expandedIds={expandedIds}
-                level={level + 1}
-                nodes={node.children ?? []}
-                onSelect={onSelect}
-                onToggle={onToggle}
-                selectedId={selectedId}
-              />
-            ) : null}
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
+const nextSteps: string[] = [
+  '梳理业务对象与指标口径（船舶、任务、航线、泊位、时段）。',
+  '定义首页核心视图的信息架构与交互流程。',
+  '按 feature 目录拆分数据接入、可视化组件和分析模块。',
+  '建立模拟数据与 API 契约，支持后续联调。'
+]
 
 export default function HomePage() {
-  const [expandedIds, setExpandedIds] = useState<string[]>(['src'])
-  const [selectedId, setSelectedId] = useState('src-app')
-
-  const selectedNode = nodeMap.get(selectedId) ?? treeData[0]
-
-  function handleToggle(id: string) {
-    setExpandedIds(current =>
-      current.includes(id) ? current.filter(item => item !== id) : [...current, id]
-    )
-  }
-
   return (
     <section className={styles.page}>
       <article className={styles.hero}>
-        <div className={styles.contentGrid}>
-          <section className={styles.panel}>
-            <div className={styles.panelHeader}>
-              <h2>目录结构</h2>
-            </div>
-            <div className={styles.treePanel}>
-              <div className={styles.treeRoot}>
-                <span className={styles.rootBadge}>Project</span>
-                <span className={styles.rootPath}>template/</span>
-              </div>
-              <TreeItems
-                nodes={treeData}
-                expandedIds={expandedIds}
-                selectedId={selectedId}
-                onSelect={setSelectedId}
-                onToggle={handleToggle}
-              />
-            </div>
-          </section>
-
-          <section className={styles.panel}>
-            <div className={styles.panelHeader}>
-              <h2>功能与作用</h2>
-            </div>
-            <div className={styles.detailPanel}>
-              <p className={styles.path}>{selectedNode.path}</p>
-              <p className={styles.itemTitle}>{selectedNode.title}</p>
-              <p className={styles.itemDescription}>{selectedNode.description}</p>
-              <p className={styles.detailHint}>
-                点击左侧目录可切换说明，带箭头的目录支持展开和收起。
-              </p>
-            </div>
-          </section>
-        </div>
-
-        <div className={styles.copy}>
-          <p className={styles.eyebrow}>React 19 + Vite 7 + TypeScript</p>
-          <h1 className={styles.title}>模板结构总览</h1>
-          <p className={styles.description}>
-            首页聚焦目录导航与职责说明，便于快速理解模板结构；接入业务后可以直接移除。
-          </p>
-        </div>
+        <p className={styles.eyebrow}>Barge Scheduling Visualization</p>
+        <h1 className={styles.title}>驳船调度可视化分析系统</h1>
+        <p className={styles.description}>
+          当前已完成模板去品牌化初始化。本页作为业务首页占位，聚焦系统定位、核心能力与建设路线，后续可直接替换为真实业务看板。
+        </p>
       </article>
+
+      <section className={styles.panel}>
+        <h2>系统定位</h2>
+        <p>
+          面向驳船调度场景，提供可视化态势展示、调度计划分析与执行追踪能力，帮助运营团队提升资源配置效率与计划可执行性。
+        </p>
+      </section>
+
+      <section className={styles.panel}>
+        <h2>规划中的核心模块</h2>
+        <ul className={styles.moduleList}>
+          {coreModules.map(item => (
+            <li key={item.title} className={styles.moduleItem}>
+              <p className={styles.moduleTitle}>{item.title}</p>
+              <p className={styles.moduleDescription}>{item.description}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className={styles.panel}>
+        <h2>下一步建设方向</h2>
+        <ol className={styles.stepList}>
+          {nextSteps.map(step => (
+            <li key={step}>{step}</li>
+          ))}
+        </ol>
+      </section>
     </section>
   )
 }

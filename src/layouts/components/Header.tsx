@@ -5,8 +5,8 @@ export function Header() {
     <header className={styles.header}>
       <div className={styles.inner}>
         <div>
-          <p className={styles.kicker}>模板项目</p>
-          <p className={styles.brand}>React Feature 架构</p>
+          <p className={styles.kicker}>调度分析平台</p>
+          <p className={styles.brand}>驳船调度可视化分析系统</p>
         </div>
       </div>
     </header>
