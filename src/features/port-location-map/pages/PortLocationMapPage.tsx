@@ -1,38 +1,24 @@
 import { useTheme } from '@/shared/theme'
+import { ScreenPage } from '@/shared/components/ScreenPage'
 import chrome from '@/shared/components/ScreenPage/ScreenPage.module.css'
 import { PortLocationMap } from '../components/PortLocationMap'
 import styles from './PortLocationMapPage.module.css'
 
 export default function PortLocationMapPage() {
   const { mode } = useTheme()
+  const metrics = [
+    { label: '模式', value: 'Map' },
+    { label: '底图', value: 'GL' },
+    { label: '主题', value: mode === 'dark' ? 'Dark' : 'Light' }
+  ]
 
   return (
-    <section className={chrome.page}>
-      <header className={chrome.hero}>
-        <div className={chrome.heroGrid}>
-          <div className={chrome.heroMain}>
-            <p className={chrome.eyebrow}>Map Stage</p>
-            <h1 className={chrome.title}>港口地理分布视图</h1>
-            <p className={chrome.description}>聚焦港口坐标、空间分布与交互定位。</p>
-          </div>
-
-          <div className={chrome.metricGrid}>
-            <div className={chrome.metricCard}>
-              <span className={chrome.metricLabel}>模式</span>
-              <strong className={chrome.metricValue}>Map</strong>
-            </div>
-            <div className={chrome.metricCard}>
-              <span className={chrome.metricLabel}>底图</span>
-              <strong className={chrome.metricValue}>GL</strong>
-            </div>
-            <div className={chrome.metricCard}>
-              <span className={chrome.metricLabel}>主题</span>
-              <strong className={chrome.metricValue}>{mode === 'dark' ? 'Dark' : 'Light'}</strong>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <ScreenPage
+      eyebrow='Map Stage'
+      title='港口地理分布视图'
+      description='聚焦港口坐标、空间分布与交互定位。'
+      metrics={metrics}
+    >
       <section className={styles.layoutGrid}>
         <section className={`${chrome.panel} ${styles.mapPanel}`}>
           <div className={chrome.panelHeader}>
@@ -73,6 +59,6 @@ export default function PortLocationMapPage() {
           </div>
         </section>
       </section>
-    </section>
+    </ScreenPage>
   )
 }

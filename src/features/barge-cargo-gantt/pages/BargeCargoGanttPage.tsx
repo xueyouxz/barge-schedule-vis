@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTheme } from '@/shared/theme'
 import { useElementWidth } from '@/shared/lib/useContainerSize'
+import { ScreenPage } from '@/shared/components/ScreenPage'
 import chrome from '@/shared/components/ScreenPage/ScreenPage.module.css'
 import { BargeCargoGanttView } from '../components/BargeCargoGanttView'
 import type { GanttEvent } from '../components/BargeCargoGanttView'
@@ -13,34 +14,19 @@ export default function BargeCargoGanttPage() {
   const { ref, width } = useElementWidth<HTMLDivElement>()
 
   const selectionLabel = selectedEvent ? selectedEvent.port || selectedEvent.vessel : '未选中'
+  const metrics = [
+    { label: '模式', value: 'Gantt' },
+    { label: '选择', value: selectionLabel },
+    { label: '主题', value: mode === 'dark' ? 'Dark' : 'Light' }
+  ]
 
   return (
-    <section className={chrome.page}>
-      <header className={chrome.hero}>
-        <div className={chrome.heroGrid}>
-          <div className={chrome.heroMain}>
-            <p className={chrome.eyebrow}>Barge Timeline</p>
-            <h1 className={chrome.title}>驳船货流甘特视图</h1>
-            <p className={chrome.description}>聚焦靠泊、作业、等待与航行时序。</p>
-          </div>
-
-          <div className={chrome.metricGrid}>
-            <div className={chrome.metricCard}>
-              <span className={chrome.metricLabel}>模式</span>
-              <strong className={chrome.metricValue}>Gantt</strong>
-            </div>
-            <div className={chrome.metricCard}>
-              <span className={chrome.metricLabel}>选择</span>
-              <strong className={chrome.metricValue}>{selectionLabel}</strong>
-            </div>
-            <div className={chrome.metricCard}>
-              <span className={chrome.metricLabel}>主题</span>
-              <strong className={chrome.metricValue}>{mode === 'dark' ? 'Dark' : 'Light'}</strong>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <ScreenPage
+      eyebrow='Barge Timeline'
+      title='驳船货流甘特视图'
+      description='聚焦靠泊、作业、等待与航行时序。'
+      metrics={metrics}
+    >
       <section className={styles.layoutGrid}>
         <section className={`${chrome.panel} ${styles.chartPanel}`}>
           <div className={chrome.panelHeader}>
@@ -78,6 +64,6 @@ export default function BargeCargoGanttPage() {
           </div>
         </section>
       </section>
-    </section>
+    </ScreenPage>
   )
 }

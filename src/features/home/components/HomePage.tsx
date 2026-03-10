@@ -26,17 +26,23 @@ type ViewPanelProps = {
   title: string
   extra?: string
   icon: ReactNode
-  children: (size: { width: number; height: number }) => ReactNode
+  children?: (size: { width: number; height: number }) => ReactNode
+  renderStatic?: () => ReactNode
 }
 
-function ViewPanel({ className, title, extra, icon, children }: ViewPanelProps) {
+function ViewPanel({ className, title, extra, icon, children, renderStatic }: ViewPanelProps) {
   const [ref, size] = useContainerSize<HTMLDivElement>()
+  const content = renderStatic
+    ? renderStatic()
+    : size.width > 0 && size.height > 0 && children
+      ? children(size)
+      : null
 
   return (
     <section className={[styles.panelCard, className].filter(Boolean).join(' ')}>
       <WidgetHeader icon={icon} title={title} extra={extra} />
-      <div ref={ref} className={styles.panelBody}>
-        {size.width > 0 && size.height > 0 ? children(size) : null}
+      <div ref={renderStatic ? undefined : ref} className={styles.panelBody}>
+        {content}
       </div>
     </section>
   )
@@ -124,20 +130,19 @@ export default function HomePage() {
             )}
           </ViewPanel>
 
-          <section className={`${styles.panelCard} ${styles.mapPanel}`}>
-            <WidgetHeader
-              icon={<MapIcon />}
-              title='港口地理位置'
-              extra={activePort ? `选中 ${activePort}` : '地图联动'}
-            />
-            <div className={styles.panelBody}>
+          <ViewPanel
+            className={styles.mapPanel}
+            title='港口地理位置'
+            extra={activePort ? `选中 ${activePort}` : '地图联动'}
+            icon={<MapIcon />}
+            renderStatic={() => (
               <PortLocationMap
                 compact
                 selectedPortCode={activePort}
                 onPortSelect={handlePortSelection}
               />
-            </div>
-          </section>
+            )}
+          />
 
           <ViewPanel
             className={styles.ganttPanel}

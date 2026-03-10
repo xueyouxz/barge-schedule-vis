@@ -1,5 +1,6 @@
 import { useTheme } from '@/shared/theme'
 import { useElementWidth } from '@/shared/lib/useContainerSize'
+import { ScreenPage } from '@/shared/components/ScreenPage'
 import chrome from '@/shared/components/ScreenPage/ScreenPage.module.css'
 import { PortCargoByMainlineView } from '../components/PortCargoByMainlineView'
 import styles from './PortCargoByMainlinePage.module.css'
@@ -7,34 +8,19 @@ import styles from './PortCargoByMainlinePage.module.css'
 export default function PortCargoByMainlinePage() {
   const { mode } = useTheme()
   const { ref, width } = useElementWidth<HTMLDivElement>()
+  const metrics = [
+    { label: '模式', value: 'Origin' },
+    { label: '图层', value: 'Cargo' },
+    { label: '主题', value: mode === 'dark' ? 'Dark' : 'Light' }
+  ]
 
   return (
-    <section className={chrome.page}>
-      <header className={chrome.hero}>
-        <div className={chrome.heroGrid}>
-          <div className={chrome.heroMain}>
-            <p className={chrome.eyebrow}>Cargo Flow</p>
-            <h1 className={chrome.title}>港口主线货流视图</h1>
-            <p className={chrome.description}>从港口维度查看主线货箱分布与箱型构成。</p>
-          </div>
-
-          <div className={chrome.metricGrid}>
-            <div className={chrome.metricCard}>
-              <span className={chrome.metricLabel}>模式</span>
-              <strong className={chrome.metricValue}>Origin</strong>
-            </div>
-            <div className={chrome.metricCard}>
-              <span className={chrome.metricLabel}>图层</span>
-              <strong className={chrome.metricValue}>Cargo</strong>
-            </div>
-            <div className={chrome.metricCard}>
-              <span className={chrome.metricLabel}>主题</span>
-              <strong className={chrome.metricValue}>{mode === 'dark' ? 'Dark' : 'Light'}</strong>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <ScreenPage
+      eyebrow='Cargo Flow'
+      title='港口主线货流视图'
+      description='从港口维度查看主线货箱分布与箱型构成。'
+      metrics={metrics}
+    >
       <section className={`${chrome.panel} ${styles.panel}`}>
         <div className={chrome.panelHeader}>
           <div>
@@ -52,6 +38,6 @@ export default function PortCargoByMainlinePage() {
           </div>
         </div>
       </section>
-    </section>
+    </ScreenPage>
   )
 }
