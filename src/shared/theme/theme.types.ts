@@ -17,8 +17,6 @@ export interface ThemeTokens {
     accent: string
     border: string
     borderStrong: string
-    eyebrowText: string
-    eyebrowDot: string
   }
   chart: {
     background: string

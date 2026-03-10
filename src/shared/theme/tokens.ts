@@ -14,9 +14,7 @@ export const themeTokens: ThemeTokens = {
     mutedStrong: 'var(--color-muted-strong)',
     accent: 'var(--color-accent)',
     border: 'var(--color-border)',
-    borderStrong: 'var(--color-border-strong)',
-    eyebrowText: 'var(--color-eyebrow-text)',
-    eyebrowDot: 'var(--color-eyebrow-dot)'
+    borderStrong: 'var(--color-border-strong)'
   },
   chart: {
     background: 'var(--chart-background)',
