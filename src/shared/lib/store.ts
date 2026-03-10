@@ -1,7 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit'
+import { dashboardFilterReducer } from './dashboardFilterSlice'
 
 export const store = configureStore({
-  reducer: {}
+  reducer: {
+    dashboardFilter: dashboardFilterReducer
+  }
 })
 
 export type RootState = ReturnType<typeof store.getState>

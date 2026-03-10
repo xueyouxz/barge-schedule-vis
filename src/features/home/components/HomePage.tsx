@@ -1,253 +1,161 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
-import { BargeCargoGanttView, CargoTablePanel, type GanttEvent } from '@/features/barge-cargo-gantt'
+import { useMemo, type ReactNode } from 'react'
+import { useAppDispatch, useAppSelector } from '@/shared/lib/hooks'
+import { toggleSelectedPort, setSelectedPort } from '@/shared/lib/dashboardFilterSlice'
+import { DashboardShell } from '@/shared/components/DashboardShell'
+import { WidgetHeader } from '@/shared/components/WidgetHeader'
+import { useContainerSize } from '@/shared/lib/useContainerSize'
+import { BargeCargoGanttView, type GanttEvent } from '@/features/barge-cargo-gantt'
 import { PortCargoByMainlineView } from '@/features/port-cargo-mainline'
 import { PortLocationMap } from '@/features/port-location-map'
 import styles from './HomePage.module.css'
 
-type MetricItem = {
-  label: string
-  value: string
-  description: string
+function ShipIcon() {
+  return <span aria-hidden='true'>航</span>
 }
 
-type ShortcutItem = {
+function GridIcon() {
+  return <span aria-hidden='true'>流</span>
+}
+
+function MapIcon() {
+  return <span aria-hidden='true'>港</span>
+}
+
+type ViewPanelProps = {
+  className?: string
   title: string
-  to: string
+  extra?: string
+  icon: ReactNode
+  children: (size: { width: number; height: number }) => ReactNode
 }
 
-type ResponsivePanelProps = {
-  title: string
-  description: string
-  action?: ReactNode
-  children: (width: number) => ReactNode
-}
-
-const metrics: MetricItem[] = [
-  {
-    label: '联动视图',
-    value: '3 个',
-    description: '甘特图、货物流向与地图在一个面板内统一展示。'
-  },
-  {
-    label: '分析焦点',
-    value: '港口级',
-    description: '点击港口后同步查看时间、空间与货量分布变化。'
-  },
-  {
-    label: '布局策略',
-    value: '响应式',
-    description: '桌面端双列编排，窄屏自动折叠为纵向浏览。'
-  }
-]
-
-const shortcuts: ShortcutItem[] = [
-  { title: '查看甘特图全屏页', to: '/barge-cargo-gantt' },
-  { title: '查看货流全屏页', to: '/port-cargo-mainline' },
-  { title: '查看地图全屏页', to: '/port-location-map' }
-]
-
-function useElementWidth<T extends HTMLElement>() {
-  const ref = useRef<T | null>(null)
-  const [width, setWidth] = useState(0)
-
-  useEffect(() => {
-    const element = ref.current
-    if (!element) {
-      return
-    }
-
-    const updateWidth = () => {
-      setWidth(element.getBoundingClientRect().width)
-    }
-
-    updateWidth()
-
-    const observer = new ResizeObserver(entries => {
-      const nextWidth = entries[0]?.contentRect.width ?? element.getBoundingClientRect().width
-      setWidth(nextWidth)
-    })
-
-    observer.observe(element)
-    window.addEventListener('resize', updateWidth)
-
-    return () => {
-      observer.disconnect()
-      window.removeEventListener('resize', updateWidth)
-    }
-  }, [])
-
-  return { ref, width }
-}
-
-function ResponsivePanel({ title, description, action, children }: ResponsivePanelProps) {
-  const { ref, width } = useElementWidth<HTMLDivElement>()
+function ViewPanel({ className, title, extra, icon, children }: ViewPanelProps) {
+  const [ref, size] = useContainerSize<HTMLDivElement>()
 
   return (
-    <section className={styles.panelCard}>
-      <div className={styles.panelHeader}>
-        <div>
-          <h2 className={styles.panelTitle}>{title}</h2>
-          <p className={styles.panelDescription}>{description}</p>
-        </div>
-        {action ? <div className={styles.panelAction}>{action}</div> : null}
-      </div>
-
+    <section className={[styles.panelCard, className].filter(Boolean).join(' ')}>
+      <WidgetHeader icon={icon} title={title} extra={extra} />
       <div ref={ref} className={styles.panelBody}>
-        {width > 0 ? children(width) : null}
+        {size.width > 0 && size.height > 0 ? children(size) : null}
       </div>
     </section>
   )
 }
 
 export default function HomePage() {
-  const [activePort, setActivePort] = useState<string | undefined>()
-  const [selectedEvent, setSelectedEvent] = useState<GanttEvent | null>(null)
+  const dispatch = useAppDispatch()
+  const activePort = useAppSelector(state => state.dashboardFilter.selectedPort) ?? undefined
 
-  const handlePortSelection = useCallback((portCode: string) => {
-    setSelectedEvent(null)
-    setActivePort(current => (current === portCode ? undefined : portCode))
+  const nowLabel = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
+    return formatter.format(new Date())
   }, [])
 
-  const clearSelection = useCallback(() => {
-    setSelectedEvent(null)
-    setActivePort(undefined)
-  }, [])
+  const kpis = [
+    {
+      label: '设计基准',
+      value: '1920×1080'
+    },
+    {
+      label: '联动状态',
+      value: activePort ?? '全港口'
+    },
+    {
+      label: '视图数量',
+      value: '3'
+    }
+  ]
 
-  const handleGanttSelection = useCallback((event: GanttEvent) => {
-    setSelectedEvent(event)
-    setActivePort(event.port || undefined)
-  }, [])
+  const handlePortSelection = (portCode: string) => {
+    dispatch(toggleSelectedPort(portCode))
+  }
+
+  const handleGanttSelection = (event: GanttEvent) => {
+    dispatch(setSelectedPort(event.port || null))
+  }
 
   return (
-    <section className={styles.page}>
-      <header className={styles.hero}>
-        <div className={styles.heroContent}>
-          <p className={styles.eyebrow}>Barge Scheduling Dashboard</p>
-          <h1 className={styles.title}>驳船调度综合看板</h1>
-          <p className={styles.description}>
-            将甘特图、货物分布和地图视图整合到同一个分析面板中，用统一的港口联动上下文串起调度时序、货物流向与空间位置。
-          </p>
-
-          <div className={styles.toolbar}>
-            <div className={styles.selectionBadge}>
-              <span className={styles.selectionLabel}>当前联动港口</span>
-              <strong>{activePort ?? '全部港口'}</strong>
-            </div>
-
-            <div className={styles.toolbarActions}>
-              <button type='button' className={styles.primaryButton} onClick={clearSelection}>
-                清空联动
-              </button>
-
-              {shortcuts.map(item => (
-                <Link key={item.to} to={item.to} className={styles.secondaryLink}>
-                  {item.title}
-                </Link>
-              ))}
-            </div>
+    <DashboardShell>
+      <section className={styles.page}>
+        <header className={styles.hero}>
+          <div className={styles.heroMain}>
+            <p className={styles.eyebrow}>Barge Dashboard</p>
+            <h1 className={styles.title}>驳船作业与港口联动大屏</h1>
+            <p className={styles.description}>
+              聚合作业甘特、主线港口货量与地理分布，首页联动以港口为中心组织三张核心视图。
+            </p>
           </div>
-        </div>
 
-        <div className={styles.metricGrid}>
-          {metrics.map(item => (
-            <article key={item.label} className={styles.metricCard}>
-              <p className={styles.metricLabel}>{item.label}</p>
-              <p className={styles.metricValue}>{item.value}</p>
-              <p className={styles.metricDescription}>{item.description}</p>
-            </article>
-          ))}
-        </div>
-      </header>
+          <div className={styles.metricGrid}>
+            {kpis.map(item => (
+              <article key={item.label} className={styles.metricCard}>
+                <span className={styles.metricLabel}>{item.label}</span>
+                <strong className={styles.metricValue}>{item.value}</strong>
+              </article>
+            ))}
+          </div>
 
-      <section className={styles.overviewGrid}>
-        <ResponsivePanel
-          title='货物视图'
-          description='按港口聚合主线货流，点击任一港口行即可同步联动甘特图和地图。'
-          action={
-            activePort ? <span className={styles.inlineStatus}>已聚焦 {activePort}</span> : null
-          }
-        >
-          {width => (
-            <div className={styles.chartViewport}>
+          <div className={styles.heroMeta}>
+            <span className={styles.metaPill}>首页大屏</span>
+            <span className={styles.metaText}>更新时间 {nowLabel}</span>
+          </div>
+        </header>
+
+        <section className={styles.dashboardGrid}>
+          <ViewPanel
+            className={styles.cargoPanel}
+            title='主线港口箱量分布'
+            extra={activePort ? `高亮 ${activePort}` : '点击联动'}
+            icon={<GridIcon />}
+          >
+            {size => (
               <PortCargoByMainlineView
-                width={Math.max(width, 640)}
-                height={520}
+                width={size.width}
+                height={size.height}
                 selectedPort={activePort}
                 onBarClick={portId => handlePortSelection(portId)}
               />
-            </div>
-          )}
-        </ResponsivePanel>
+            )}
+          </ViewPanel>
 
-        <section className={styles.panelCard}>
-          <div className={styles.panelHeader}>
-            <div>
-              <h2 className={styles.panelTitle}>地图视图</h2>
-              <p className={styles.panelDescription}>
-                查看港口空间分布，并通过地图交互反向驱动时序与货流分析。
-              </p>
-            </div>
-            {activePort ? <span className={styles.inlineStatus}>定位到 {activePort}</span> : null}
-          </div>
-
-          <div className={styles.panelBody}>
-            <PortLocationMap
-              compact
-              selectedPortCode={activePort}
-              onPortSelect={handlePortSelection}
+          <section className={`${styles.panelCard} ${styles.mapPanel}`}>
+            <WidgetHeader
+              icon={<MapIcon />}
+              title='港口地理位置'
+              extra={activePort ? `选中 ${activePort}` : '地图联动'}
             />
-          </div>
-        </section>
-      </section>
+            <div className={styles.panelBody}>
+              <PortLocationMap
+                compact
+                selectedPortCode={activePort}
+                onPortSelect={handlePortSelection}
+              />
+            </div>
+          </section>
 
-      <section className={styles.timelineGrid}>
-        <ResponsivePanel
-          title='甘特图视图'
-          description='展示驳船靠港、装卸、等待与航行时序。点击条块后在右侧查看对应货箱明细。'
-          action={
-            activePort ? <span className={styles.inlineStatus}>高亮港口 {activePort}</span> : null
-          }
-        >
-          {width => (
-            <div className={styles.chartViewportWide}>
+          <ViewPanel
+            className={styles.ganttPanel}
+            title='驳船作业时序甘特'
+            extra={activePort ? `聚焦 ${activePort}` : '全量视图'}
+            icon={<ShipIcon />}
+          >
+            {size => (
               <BargeCargoGanttView
-                width={Math.max(width, 1120)}
-                height={760}
+                width={size.width}
+                height={size.height}
                 highlightPort={activePort}
                 onBarClick={handleGanttSelection}
               />
-            </div>
-          )}
-        </ResponsivePanel>
-
-        <section className={styles.panelCard}>
-          <div className={styles.panelHeader}>
-            <div>
-              <h2 className={styles.panelTitle}>作业明细</h2>
-              <p className={styles.panelDescription}>
-                根据甘特图选中的作业区块，查看对应的货箱记录、主线口岸和时间字段。
-              </p>
-            </div>
-          </div>
-
-          <div className={styles.detailPanel}>
-            {selectedEvent ? (
-              <div className={styles.detailSummary}>
-                <span className={styles.detailTag}>{selectedEvent.port}</span>
-                <span className={styles.detailTag}>{selectedEvent.vessel}</span>
-                <span className={styles.detailTag}>{selectedEvent.voyage}</span>
-              </div>
-            ) : (
-              <div className={styles.emptyState}>
-                先点击左侧甘特图中的港口停靠或作业块，再在此查看明细数据。
-              </div>
             )}
-
-            <CargoTablePanel event={selectedEvent} onClose={() => setSelectedEvent(null)} />
-          </div>
+          </ViewPanel>
         </section>
       </section>
-    </section>
+    </DashboardShell>
   )
 }

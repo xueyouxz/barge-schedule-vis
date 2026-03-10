@@ -1,29 +1,55 @@
+import { useTheme } from '@/shared/theme'
+import { useElementWidth } from '@/shared/lib/useElementWidth'
+import chrome from '@/shared/components/ScreenPage/ScreenPage.module.css'
 import { PortCargoByMainlineView } from '../components/PortCargoByMainlineView'
 import styles from './PortCargoByMainlinePage.module.css'
 
 export default function PortCargoByMainlinePage() {
+  const { mode } = useTheme()
+  const { ref, width } = useElementWidth<HTMLDivElement>()
+
   return (
-    <section className={styles.page}>
-      <header className={styles.hero}>
-        <div>
-          <p className={styles.eyebrow}>Feature Demo</p>
-          <h1 className={styles.title}>港口主线货流视图</h1>
-          <p className={styles.description}>
-            按起运港聚合货箱，并按主线路径拆分展示货流分布。每个块体的宽度表示箱量规模，内部离散小格表示重箱与空箱构成。
-          </p>
+    <section className={chrome.page}>
+      <header className={chrome.hero}>
+        <div className={chrome.heroGrid}>
+          <div className={chrome.heroMain}>
+            <p className={chrome.eyebrow}>Cargo Flow</p>
+            <h1 className={chrome.title}>港口主线货流视图</h1>
+            <p className={chrome.description}>从港口维度查看主线货箱分布与箱型构成。</p>
+          </div>
+
+          <div className={chrome.metricGrid}>
+            <div className={chrome.metricCard}>
+              <span className={chrome.metricLabel}>模式</span>
+              <strong className={chrome.metricValue}>Origin</strong>
+            </div>
+            <div className={chrome.metricCard}>
+              <span className={chrome.metricLabel}>图层</span>
+              <strong className={chrome.metricValue}>Cargo</strong>
+            </div>
+            <div className={chrome.metricCard}>
+              <span className={chrome.metricLabel}>主题</span>
+              <strong className={chrome.metricValue}>{mode === 'dark' ? 'Dark' : 'Light'}</strong>
+            </div>
+          </div>
         </div>
       </header>
 
-      <section className={styles.panel}>
-        <div className={styles.panelHeader}>
+      <section className={`${chrome.panel} ${styles.panel}`}>
+        <div className={chrome.panelHeader}>
           <div>
-            <h2>港口维度分布</h2>
-            <p>默认读取 `public/data/output/2026-01-13 17-20-38/container_records.csv`。</p>
+            <span className={chrome.panelEyebrow}>Cargo Matrix</span>
+            <h2 className={chrome.panelTitle}>港口维度分布</h2>
           </div>
+          <span className={chrome.panelStatus}>主线聚合</span>
         </div>
 
-        <div className={styles.chartWrap}>
-          <PortCargoByMainlineView width={1480} height={760} />
+        <div ref={ref} className={chrome.panelBody}>
+          <div className={chrome.viewport}>
+            {width > 0 ? (
+              <PortCargoByMainlineView width={Math.max(width, 980)} height={760} />
+            ) : null}
+          </div>
         </div>
       </section>
     </section>

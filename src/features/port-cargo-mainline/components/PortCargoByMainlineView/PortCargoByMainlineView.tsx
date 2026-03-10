@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import * as d3 from 'd3'
+import { color as d3Color, scaleBand, scaleLinear } from 'd3'
 import { useTheme } from '@/shared/theme'
 import { resolvePortColor } from '@/shared/lib/portColors'
 import { usePortCargoByMainlineData } from './hooks/usePortCargoByMainlineData'
@@ -118,7 +118,10 @@ export default function PortCargoByMainlineView({
   selectedPort,
   onBarClick
 }: PortCargoByMainlineViewProps) {
-  const { theme } = useTheme()
+  const {
+    theme,
+    tokens: { chart }
+  } = useTheme()
   const { data, loading, error } = usePortCargoByMainlineData(csvFiles)
 
   const layout = useMemo(() => {
@@ -150,13 +153,11 @@ export default function PortCargoByMainlineView({
     return Math.min(acc, candidate)
   }, Number.POSITIVE_INFINITY)
 
-  const countToWidth = d3
-    .scaleLinear()
+  const countToWidth = scaleLinear()
     .domain([0, layout.maxCount])
     .range([0, layout.maxCount * (Number.isFinite(widthScaleFactor) ? widthScaleFactor : 0)])
 
-  const yScale = d3
-    .scaleBand<string>()
+  const yScale = scaleBand<string>()
     .domain(data.map(row => row.port))
     .range([0, chartHeight])
     .paddingInner(ROW_BAND_PADDING_INNER)
@@ -174,10 +175,11 @@ export default function PortCargoByMainlineView({
     )
   )
 
-  const emptyCellFill = theme === 'dark' ? '#475569' : '#e5e7eb'
-  const dividerStroke = 'var(--chart-grid-line-color)'
-  const blockBackground = 'var(--chart-surface)'
-  const selectedRowFill = theme === 'dark' ? 'rgba(45, 212, 191, 0.14)' : 'rgba(15, 118, 110, 0.10)'
+  const emptyCellFill = chart.sail
+  const dividerStroke = chart.gridLineColor
+  const blockBackground = chart.surface
+  const selectedStroke = chart.load
+  const selectedRowFill = theme === 'dark' ? 'rgba(242, 154, 67, 0.12)' : 'rgba(217, 122, 29, 0.10)'
 
   return (
     <div className={styles.container}>
@@ -196,7 +198,7 @@ export default function PortCargoByMainlineView({
                   x={PORT_LABEL_OFFSET.x}
                   y={rowY + bandHeight / 2 + PORT_LABEL_OFFSET.y}
                   className={styles.portLabel}
-                  fill={isSelectedRow ? 'var(--color-accent)' : undefined}
+                  fill={isSelectedRow ? selectedStroke : undefined}
                   textAnchor='end'
                 >
                   {portRow.port}
@@ -209,9 +211,9 @@ export default function PortCargoByMainlineView({
                   height={bandHeight}
                   fill={isSelectedRow ? selectedRowFill : getRowBackground(rowIndex)}
                   opacity={ROW_DECORATION_STYLE.backgroundOpacity}
-                  stroke={isSelectedRow ? 'var(--color-accent)' : 'none'}
+                  stroke={isSelectedRow ? selectedStroke : 'none'}
                   strokeWidth={isSelectedRow ? 1.2 : 0}
-                  rx={10}
+                  rx={0}
                 />
 
                 <line
@@ -219,7 +221,7 @@ export default function PortCargoByMainlineView({
                   x2={chartWidth}
                   y1={rowY + bandHeight}
                   y2={rowY + bandHeight}
-                  stroke={isSelectedRow ? 'var(--color-accent)' : dividerStroke}
+                  stroke={isSelectedRow ? selectedStroke : dividerStroke}
                   strokeDasharray={ROW_DECORATION_STYLE.dividerDashArray}
                   opacity={ROW_DECORATION_STYLE.dividerOpacity}
                 />
@@ -238,8 +240,8 @@ export default function PortCargoByMainlineView({
                     blockWidth,
                     blockHeight
                   )
-                  const color = resolvePortColor(block.route, theme)
-                  const borderColor = d3.color(color)?.darker(0.6).formatHex() ?? '#374151'
+                  const blockColor = resolvePortColor(block.route, theme)
+                  const borderColor = d3Color(blockColor)?.darker(0.6).formatHex() ?? '#374151'
 
                   return (
                     <g key={`${portRow.port}-${block.route}-${blockIndex}`}>
@@ -266,7 +268,7 @@ export default function PortCargoByMainlineView({
                           y={cell.y}
                           width={cell.width}
                           height={cell.height}
-                          fill={cell.type === 'empty' ? emptyCellFill : color}
+                          fill={cell.type === 'empty' ? emptyCellFill : blockColor}
                           stroke={borderColor}
                           strokeWidth={BLOCK_STYLE.cellStrokeWidth}
                           opacity={

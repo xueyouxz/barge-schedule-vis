@@ -1,15 +1,23 @@
 .shell {
   display: grid;
-  gap: 0.9rem;
+  gap: 0.6rem;
 }
 
 .stage {
   position: relative;
   min-height: 640px;
-  overflow: hidden;
-  background: var(--color-surface-strong);
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
+  overflow: clip;
+  background: var(--chart-surface);
+  isolation: isolate;
+}
+
+.stage::after {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  content: '';
+  border: 1px solid var(--chart-border);
 }
 
 .stageCompact {
@@ -25,73 +33,6 @@
   min-height: 500px;
 }
 
-.overlayTop,
-.overlayBottom {
-  position: absolute;
-  z-index: 2;
-  display: flex;
-  gap: 0.75rem;
-  pointer-events: none;
-}
-
-.overlayTop {
-  top: 1rem;
-  left: 1rem;
-  flex-wrap: wrap;
-}
-
-.overlayBottom {
-  right: 1rem;
-  bottom: 1rem;
-  justify-content: flex-end;
-}
-
-.infoCard,
-.hintCard,
-.summary {
-  background: color-mix(in srgb, var(--color-surface-strong) 82%, transparent);
-  backdrop-filter: blur(14px);
-  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
-  box-shadow: 0 16px 40px rgb(15 23 42 / 10%);
-}
-
-.infoCard,
-.hintCard {
-  padding: 0.75rem 0.9rem;
-  border-radius: 16px;
-}
-
-.infoLabel,
-.hintTitle,
-.summaryTitle {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--color-accent);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.infoValue,
-.hintText,
-.summaryText {
-  margin-top: 0.25rem;
-  line-height: 1.5;
-  color: var(--color-text);
-}
-
-.infoValue {
-  font-size: 0.9rem;
-}
-
-.hintCard {
-  max-width: 21rem;
-}
-
-.hintText,
-.summaryText {
-  font-size: 0.88rem;
-}
-
 .statusMask {
   position: absolute;
   inset: 0;
@@ -99,62 +40,52 @@
   display: grid;
   place-items: center;
   padding: 1.5rem;
-  color: var(--color-text);
+  font-size: 12px;
+  color: var(--chart-text);
   text-align: center;
-  background: color-mix(in srgb, var(--color-surface-strong) 80%, transparent);
-  backdrop-filter: blur(10px);
-}
-
-.summary {
-  padding: 0.9rem 1rem;
-  border-radius: 18px;
+  background: rgb(255 255 255 / 88%);
 }
 
 .marker {
   display: inline-flex;
-  gap: 0.45rem;
+  gap: 0.35rem;
   align-items: center;
   padding: 0;
-  color: var(--color-text);
+  color: var(--chart-text);
   cursor: pointer;
   background: none;
   border: 0;
 }
 
 .markerDot {
-  position: relative;
-  width: 0.85rem;
-  height: 0.85rem;
-  background: var(--color-accent);
-  border: 2px solid color-mix(in srgb, var(--color-surface-strong) 90%, white);
+  width: 0.7rem;
+  height: 0.7rem;
+  background: var(--chart-unload);
+  border: 1px solid #fff;
   border-radius: 999px;
-  box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-accent) 16%, transparent);
 }
 
 .markerLabel {
-  padding: 0.2rem 0.45rem;
-  font-size: 0.72rem;
+  padding: 0.15rem 0.32rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  color: var(--color-text);
+  color: var(--chart-text);
   white-space: nowrap;
-  background: color-mix(in srgb, var(--color-surface-strong) 88%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
-  border-radius: 999px;
-  box-shadow: 0 10px 24px rgb(15 23 42 / 10%);
+  background: rgb(255 255 255 / 94%);
+  border: 1px solid var(--chart-border);
 }
 
 .markerActive .markerDot {
-  box-shadow: 0 0 0 9px color-mix(in srgb, var(--color-accent) 24%, transparent);
-  transform: scale(1.12);
+  background: var(--chart-load);
 }
 
 .markerActive .markerLabel {
-  color: var(--color-accent);
-  border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+  color: var(--chart-load);
+  border-color: color-mix(in srgb, var(--chart-load) 35%, var(--chart-border));
 }
 
 .marker:hover .markerLabel {
-  color: var(--color-accent);
+  color: var(--chart-unload);
 }
 
 .popup :global(.maplibregl-popup-content) {
@@ -166,56 +97,52 @@
 }
 
 .popup :global(.maplibregl-popup-tip) {
-  border-top-color: color-mix(in srgb, var(--color-surface-strong) 94%, transparent);
+  border-top-color: var(--chart-surface);
 }
 
 .popupCard {
   min-width: 11rem;
-  padding: 0.85rem 0.95rem;
-  background: color-mix(in srgb, var(--color-surface-strong) 94%, transparent);
-  backdrop-filter: blur(14px);
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  box-shadow: 0 16px 40px rgb(15 23 42 / 16%);
+  padding: 0.7rem 0.8rem;
+  background: var(--chart-surface);
+  border: 1px solid var(--chart-border);
 }
 
 .popupCode {
-  font-size: 0.72rem;
+  font-size: 0.64rem;
   font-weight: 700;
-  color: var(--color-accent);
+  color: var(--chart-unload);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .popupName {
-  margin-top: 0.25rem;
-  font-size: 1rem;
+  margin-top: 0.2rem;
+  font-size: 0.84rem;
   font-weight: 700;
-  color: var(--color-text);
+  color: var(--chart-text);
 }
 
 .popupMeta {
-  margin-top: 0.35rem;
-  font-size: 0.82rem;
-  line-height: 1.5;
-  color: var(--color-muted);
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
+  line-height: 1.45;
+  color: var(--chart-text-muted);
 }
 
 .stage :global(.maplibregl-ctrl-group) {
   overflow: hidden;
-  background: color-mix(in srgb, var(--color-surface-strong) 90%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
-  border-radius: 12px;
-  box-shadow: 0 12px 30px rgb(15 23 42 / 12%);
+  background: var(--chart-surface);
+  border: 1px solid var(--chart-border);
+  box-shadow: none;
 }
 
 .stage :global(.maplibregl-ctrl-group button) {
   background: transparent;
-  border-color: color-mix(in srgb, var(--color-border) 88%, transparent);
+  border-color: var(--chart-border);
 }
 
 .stage :global(.maplibregl-ctrl-group button:hover) {
-  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  background: #f7f9fb;
 }
 
 .stage :global(.maplibregl-ctrl-group button .maplibregl-ctrl-icon) {
@@ -224,8 +151,8 @@
 }
 
 .stage :global(.maplibregl-attrib) {
-  color: var(--color-muted);
-  background: color-mix(in srgb, var(--color-surface-strong) 84%, transparent);
+  color: var(--chart-text-muted);
+  background: rgb(255 255 255 / 92%);
 }
 
 .stage :global(.maplibregl-attrib a) {
@@ -241,17 +168,6 @@
   .stageCompact,
   .mapCompact {
     min-height: 400px;
-  }
-
-  .overlayTop,
-  .overlayBottom {
-    right: 0.75rem;
-    left: 0.75rem;
-  }
-
-  .overlayBottom {
-    bottom: 0.75rem;
-    justify-content: flex-start;
   }
 
   .markerLabel {

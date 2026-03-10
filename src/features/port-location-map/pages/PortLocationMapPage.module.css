@@ -1,60 +1,54 @@
-.page {
-  display: flex;
-  flex-direction: column;
+.layoutGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
   gap: 1.5rem;
+  align-items: start;
 }
 
-.hero {
-  padding: 1.5rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
-  box-shadow: 0 20px 50px rgb(15 23 42 / 8%);
-}
-
-.eyebrow {
-  margin-bottom: 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--color-accent);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.title {
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 4vw, 3.2rem);
-  color: var(--color-text);
-}
-
-.description {
-  max-width: 56rem;
-  margin-top: 0.75rem;
-  line-height: 1.7;
-  color: var(--color-muted);
-}
-
-.panel {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
-}
-
-.panelHeader h2 {
-  font-size: 1.125rem;
-  color: var(--color-text);
-}
-
-.panelHeader p {
-  margin-top: 0.25rem;
-  font-size: 0.95rem;
-  color: var(--color-muted);
+.mapPanel,
+.sidePanel {
+  align-self: stretch;
 }
 
 .mapWrap {
   min-width: 0;
+
+  /* Prevent the panel's CSS-grid track from compressing the panelBody cell
+     below 640 px when align-content:stretch distributes negative free space. */
+  min-height: 640px;
+}
+
+.sideCardGrid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.sideCard {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.05rem;
+  background: color-mix(in srgb, var(--color-surface-strong) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 86%, transparent);
+  border-radius: 20px;
+}
+
+.sideLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.sideValue {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+@media (width <= 1180px) {
+  .layoutGrid {
+    grid-template-columns: 1fr;
+  }
 }

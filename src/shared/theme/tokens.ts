@@ -21,7 +21,6 @@ export const themeTokens: ThemeTokens = {
     textMuted: 'var(--chart-text-muted)',
     textSecondary: 'var(--chart-text-secondary)',
     grid: 'var(--chart-grid)',
-    portPanelBg: 'var(--chart-port-panel-bg)',
     dayBandEven: 'var(--chart-day-band-even)',
     dayBandOdd: 'var(--chart-day-band-odd)',
     gridLineColor: 'var(--chart-grid-line-color)',
@@ -43,5 +42,5 @@ export const themeTokens: ThemeTokens = {
   }
 }
 
-export const DEFAULT_THEME_MODE = 'system' as const
+export const DEFAULT_THEME_MODE = 'light' as const
 export const THEME_STORAGE_KEY = 'barge-schedule-vis.theme'

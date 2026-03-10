@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import * as d3 from 'd3'
+import { arc, color, max, min, select, type DefaultArcObject } from 'd3'
 import { useTheme } from '@/shared/theme'
 import styles from './BargeCargoGanttView.module.css'
 import { BARGE_CARGO_GANTT_CONFIG } from './config'
@@ -9,8 +9,6 @@ import { buildPortColorMap, resolvePortColor } from './utils/portColors'
 
 const LABEL_W = BARGE_CARGO_GANTT_CONFIG.layout.labelWidth
 const HEAD_H = BARGE_CARGO_GANTT_CONFIG.layout.headerHeight
-const PORT_PANEL_H = BARGE_CARGO_GANTT_CONFIG.layout.portPanelHeight
-const PORT_ROW_H = BARGE_CARGO_GANTT_CONFIG.layout.portRowHeight
 const PAD_B = BARGE_CARGO_GANTT_CONFIG.layout.paddingBottom
 const PAD_R = BARGE_CARGO_GANTT_CONFIG.layout.paddingRight
 const BLOCK_H = BARGE_CARGO_GANTT_CONFIG.layout.blockHeight
@@ -134,7 +132,7 @@ export default function BargeCargoGanttView({
 
   const chartHeight = useMemo(() => {
     if (!height) return undefined
-    return Math.max(height, PORT_PANEL_H + HEAD_H + PAD_B + 1)
+    return Math.max(height, HEAD_H + PAD_B + 1)
   }, [height])
 
   useEffect(() => {
@@ -142,53 +140,12 @@ export default function BargeCargoGanttView({
 
     setSelectedEvent(null)
 
-    const svg = d3.select(svgRef.current)
+    const svg = select(svgRef.current)
     svg.selectAll('*').remove()
     highlightUpdaterRef.current = []
 
-    // ── Pre-compute port color map ──────────────────────────────────────────
-    const portColors = new Map<string, string>()
-    data.events
-      .filter(ev => ev.type !== 'sailing' && !!ev.port)
-      .forEach(ev => {
-        if (portColors.has(ev.port)) return
-        portColors.set(ev.port, resolvePortColor(ev.port, theme))
-      })
-
-    // ── Pre-compute per-port cargo change series (port perspective) ─────────
-    // unloading event: cargo ARRIVES at port  → +teu
-    // loading  event: cargo LEAVES    port  → -teu
-    const topSeriesRaw = d3.group(
-      data.events.filter(
-        ev =>
-          ev.port &&
-          typeof ev.teu === 'number' &&
-          (ev.type === 'loading' || ev.type === 'unloading')
-      ),
-      ev => ev.port
-    )
-    const topSeries = Array.from(topSeriesRaw.entries())
-      .map(([port, events]) => {
-        const sorted = events.slice().sort((a, b) => a.startHour - b.startHour)
-        const points: Array<{ hour: number; portCargo: number }> = []
-        let cumulative = 0
-        sorted.forEach(ev => {
-          const teu = ev.teu ?? 0
-          // 卸货：货箱从驳船转移到港口，港口库存增加；装货：货箱离港，港口库存减少
-          const delta = ev.type === 'unloading' ? teu : -teu
-          points.push({ hour: ev.startHour, portCargo: cumulative })
-          cumulative += delta
-          points.push({ hour: ev.endHour, portCargo: cumulative })
-        })
-        return { port, points }
-      })
-      .filter(s => s.points.length > 0)
-
-    // ── Dynamic port panel height: one row per port ────────────────────────
-    const dynamicPortPanelH = Math.max(PORT_PANEL_H, topSeries.length * PORT_ROW_H)
-
     const W = Math.max(width, LABEL_W + PAD_R + 1)
-    const rowAreaTopY = dynamicPortPanelH + HEAD_H
+    const rowAreaTopY = HEAD_H
     const fallbackH =
       rowAreaTopY + data.ships.length * BARGE_CARGO_GANTT_CONFIG.layout.rowHeight + PAD_B
     const H = chartHeight ?? fallbackH
@@ -269,17 +226,7 @@ export default function BargeCargoGanttView({
       .attr('fill', cTrans)
       .attr('opacity', 0.88)
 
-    const topPanelG = svg.append('g').attr('transform', `translate(${LABEL_W}, 0)`)
-    topPanelG
-      .append('rect')
-      .attr('x', 0)
-      .attr('y', 0)
-      .attr('width', timelineW)
-      .attr('height', dynamicPortPanelH)
-      .attr('fill', chart.portPanelBg)
-      .attr('opacity', 0.9)
-
-    const axisG = svg.append('g').attr('transform', `translate(${LABEL_W}, ${dynamicPortPanelH})`)
+    const axisG = svg.append('g').attr('transform', `translate(${LABEL_W}, 0)`)
     const dayHours = BARGE_CARGO_GANTT_CONFIG.axis.dayEveryHours
     const axisBandTop = BARGE_CARGO_GANTT_CONFIG.axis.bandTop
     const axisBandHeight = HEAD_H - BARGE_CARGO_GANTT_CONFIG.axis.bandBottomGap
@@ -318,7 +265,7 @@ export default function BargeCargoGanttView({
         .attr('x1', x)
         .attr('y1', HEAD_H)
         .attr('x2', x)
-        .attr('y2', H - PAD_B - dynamicPortPanelH)
+        .attr('y2', H - PAD_B)
         .attr('stroke', cUnload)
         .attr('stroke-width', 0.8)
         .attr('stroke-dasharray', BARGE_CARGO_GANTT_CONFIG.drawing.etdDashArray)
@@ -334,7 +281,7 @@ export default function BargeCargoGanttView({
         .text(mark.label)
     })
 
-    const tooltip = d3.select(tooltipRef.current)
+    const tooltip = select(tooltipRef.current)
     const blockPositions: Record<
       string,
       { xMid: number; yTop: number; yBottom: number; rowTop: number; rowBottom: number }
@@ -387,149 +334,6 @@ export default function BargeCargoGanttView({
     const isActivePort = (port: string) => !hasHighlight || port === highlightPortRef.current
     const eventById = new Map(data.events.map(ev => [ev.id, ev]))
 
-    // ── Draw port panel: one row per port ──────────────────────────────────
-    topSeries.forEach((series, i) => {
-      const rowTop = i * PORT_ROW_H
-      const fill = portColors.get(series.port) ?? portBandFallback
-      const stroke = d3.color(fill)?.darker(0.9).formatHex() ?? chart.textMuted
-      const active = isActivePort(series.port)
-      const portValues = series.points.map(p => p.portCargo)
-      const portMin = Math.min(0, d3.min(portValues) ?? 0)
-      const portMax = Math.max(1, d3.max(portValues) ?? 1)
-      const portDomainSpan = Math.max(1, portMax - portMin)
-      const portTopY = d3
-        .scaleLinear()
-        .domain([portMin, portMax])
-        .range([rowTop + PORT_ROW_H - 6, rowTop + 6])
-      // 零线在 Y 轴上的位置（portMin 可能为负）
-      const zeroY = portTopY(0)
-
-      // Row background
-      const bgRectEl = topPanelG
-        .append('rect')
-        .attr('x', 0)
-        .attr('y', rowTop)
-        .attr('width', timelineW)
-        .attr('height', PORT_ROW_H)
-        .attr('fill', fill)
-        .attr('opacity', active ? 0.22 : 0.06)
-      highlightUpdaterRef.current.push(hp => {
-        bgRectEl.attr('opacity', !hp || series.port === hp ? 0.22 : 0.06)
-      })
-
-      // Row separator (top border)
-      if (i > 0) {
-        topPanelG
-          .append('line')
-          .attr('x1', 0)
-          .attr('y1', rowTop)
-          .attr('x2', timelineW)
-          .attr('y2', rowTop)
-          .attr('stroke', chart.border)
-          .attr('stroke-width', 0.5)
-          .attr('opacity', 0.7)
-      }
-
-      // Zero baseline (may not be at row bottom when negative values exist)
-      topPanelG
-        .append('line')
-        .attr('x1', 0)
-        .attr('y1', zeroY)
-        .attr('x2', timelineW)
-        .attr('y2', zeroY)
-        .attr('stroke', chart.gridLineColor)
-        .attr('stroke-width', 0.5)
-        .attr('stroke-dasharray', '3 3')
-        .attr('opacity', 0.65)
-
-      // Filled area under the step-line
-      const areaGen = d3
-        .area<{ hour: number; portCargo: number }>()
-        .x(p => p.hour * pxPerHour)
-        .y0(zeroY)
-        .y1(p => portTopY(p.portCargo))
-        .curve(d3.curveStepAfter)
-      const areaPathEl = topPanelG
-        .append('path')
-        .attr('d', areaGen(series.points) ?? '')
-        .attr('fill', fill)
-        .attr('opacity', active ? 0.4 : 0.08)
-      highlightUpdaterRef.current.push(hp => {
-        areaPathEl.attr('opacity', !hp || series.port === hp ? 0.4 : 0.08)
-      })
-
-      // Step-after line
-      const lineGen = d3
-        .line<{ hour: number; portCargo: number }>()
-        .x(p => p.hour * pxPerHour)
-        .y(p => portTopY(p.portCargo))
-        .curve(d3.curveStepAfter)
-      const linePathEl = topPanelG
-        .append('path')
-        .attr('d', lineGen(series.points) ?? '')
-        .attr('fill', 'none')
-        .attr('stroke', stroke)
-        .attr('stroke-width', active ? 1.5 : 0.8)
-        .attr('opacity', active ? 0.88 : 0.22)
-      highlightUpdaterRef.current.push(hp => {
-        const a = !hp || series.port === hp
-        linePathEl.attr('stroke-width', a ? 1.5 : 0.8).attr('opacity', a ? 0.88 : 0.22)
-      })
-
-      // Port name label (left)
-      const portLabelEl = topPanelG
-        .append('text')
-        .attr('x', 8)
-        .attr('y', rowTop + PORT_ROW_H / 2)
-        .attr('dominant-baseline', 'middle')
-        .attr('font-size', 10)
-        .attr('font-weight', 700)
-        .attr('fill', stroke)
-        .attr('opacity', active ? 0.88 : 0.28)
-        .text(series.port)
-      highlightUpdaterRef.current.push(hp => {
-        portLabelEl.attr('opacity', !hp || series.port === hp ? 0.88 : 0.28)
-      })
-
-      // Value-range annotation (top-right)
-      const maxLabelEl = topPanelG
-        .append('text')
-        .attr('x', timelineW - 6)
-        .attr('y', rowTop + 9)
-        .attr('text-anchor', 'end')
-        .attr('font-size', 8)
-        .attr('fill', stroke)
-        .attr('opacity', active ? 0.48 : 0.14)
-        .text(portMin < 0 ? `${portMin}~+${portMax}` : `↑ ${portMax}`)
-      highlightUpdaterRef.current.push(hp => {
-        maxLabelEl.attr('opacity', !hp || series.port === hp ? 0.48 : 0.14)
-      })
-      void portDomainSpan // suppress unused warning
-    })
-
-    // Panel section label (top-right corner)
-    topPanelG
-      .append('text')
-      .attr('x', timelineW - 6)
-      .attr('y', 9)
-      .attr('text-anchor', 'end')
-      .attr('font-size', 9)
-      .attr('fill', chart.textSecondary)
-      .attr('font-weight', 600)
-      .attr('opacity', 0.55)
-      .text('港口货箱库存变化')
-
-    // Separator between port panel and barge rows
-    svg
-      .append('line')
-      .attr('x1', LABEL_W)
-      .attr('y1', dynamicPortPanelH)
-      .attr('x2', LABEL_W + timelineW)
-      .attr('y2', dynamicPortPanelH)
-      .attr('stroke', chart.border)
-      .attr('stroke-width', 1)
-      .attr('opacity', 0.9)
-
     data.ships.forEach((ship, index) => {
       const rowY = rowAreaTopY + index * rowH
       const rowG = svg.append('g').attr('transform', `translate(0, ${rowY})`)
@@ -540,8 +344,8 @@ export default function BargeCargoGanttView({
       portStaySegments.forEach(segment => {
         const x = segment.startHour * pxPerHour
         const bandW = Math.max(1, (segment.endHour - segment.startHour) * pxPerHour)
-        const fill = portColors.get(segment.port) ?? portBandFallback
-        const stroke = d3.color(fill)?.darker(0.7).formatHex() ?? chart.border
+        const fill = portColorMap.get(segment.port) ?? portBandFallback
+        const stroke = color(fill)?.darker(0.7).formatHex() ?? chart.border
         const active = isActivePort(segment.port)
 
         // 聚合该港口停靠区间内所有装卸事件的货箱明细
@@ -660,8 +464,8 @@ export default function BargeCargoGanttView({
         .attr('opacity', 0.24)
         .text(`${ship.voyage || ship.id} · ${ship.from}`)
 
-      const minStart = d3.min(ship.events, ev => ev.startHour) ?? 0
-      const maxEnd = d3.max(ship.events, ev => ev.endHour) ?? minStart
+      const minStart = min(ship.events, ev => ev.startHour) ?? 0
+      const maxEnd = max(ship.events, ev => ev.endHour) ?? minStart
 
       areaG
         .append('line')
@@ -743,9 +547,9 @@ export default function BargeCargoGanttView({
 
             segments.forEach(seg => {
               const sweep = (seg.val / total) * Math.PI * 2 - gap
-              const arcPath = d3
-                .arc<d3.DefaultArcObject>()
-                .cornerRadius(BARGE_CARGO_GANTT_CONFIG.donut.cornerRadius)({
+              const arcPath = arc<DefaultArcObject>().cornerRadius(
+                BARGE_CARGO_GANTT_CONFIG.donut.cornerRadius
+              )({
                 innerRadius: donutInnerRadius,
                 outerRadius: donutOuterRadius,
                 startAngle: angle + gap / 2,
@@ -763,7 +567,7 @@ export default function BargeCargoGanttView({
             })
           }
 
-          const stowArc = d3.arc<d3.DefaultArcObject>()({
+          const stowArc = arc<DefaultArcObject>()({
             innerRadius: donutInnerRadius - stowInnerOffset,
             outerRadius: donutInnerRadius - stowOuterOffset,
             startAngle: -Math.PI / 2,

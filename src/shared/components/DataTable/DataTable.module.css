@@ -1,0 +1,177 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.searchArea {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.searchInput {
+  width: min(100%, 420px);
+  max-width: 420px;
+  height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+  color: var(--chart-text);
+  background: var(--chart-surface);
+  border: 1px solid var(--chart-border);
+  outline: none;
+}
+
+.searchInput:focus {
+  border-color: var(--chart-unload);
+}
+
+.searchCount,
+.pageSizeLabel,
+.paginationText {
+  font-size: 12px;
+  color: var(--chart-text-muted);
+  white-space: nowrap;
+}
+
+.pageSizeArea,
+.pagination,
+.paginationActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pageSizeSelect {
+  height: 30px;
+  padding: 0 8px;
+  font-size: 12px;
+  color: var(--chart-text);
+  background: var(--chart-surface);
+  border: 1px solid var(--chart-border);
+}
+
+.wrapper {
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+  background: var(--chart-surface);
+  border: 1px solid var(--chart-border);
+}
+
+.headerCell {
+  padding: 6px 8px;
+  font-weight: 500;
+  color: var(--chart-text-muted);
+  text-align: left;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--chart-border) 18%, var(--chart-surface));
+  border-bottom: 1px solid var(--chart-border);
+}
+
+.stickyHeader {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.sortButton {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+}
+
+.sortButton:hover {
+  color: var(--chart-text);
+}
+
+.sortMark {
+  font-size: 10px;
+  line-height: 1;
+  color: var(--chart-text-muted);
+}
+
+.cell {
+  padding: 6px 8px;
+  color: var(--chart-text);
+  border-bottom: 1px solid color-mix(in srgb, var(--chart-border) 60%, transparent);
+}
+
+.table tbody tr:hover {
+  background: #f7f9fb;
+}
+
+.emptyCell {
+  padding: 24px 12px;
+  color: var(--chart-text-muted);
+  text-align: center;
+}
+
+.spacerRow:hover {
+  background: transparent;
+}
+
+.spacerRow td {
+  padding: 0;
+  border: 0;
+}
+
+.pageButton {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  color: var(--chart-text);
+  cursor: pointer;
+  background: var(--chart-surface);
+  border: 1px solid var(--chart-border);
+}
+
+.pageButton:disabled {
+  color: var(--chart-text-muted);
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.alignLeft {
+  text-align: left;
+}
+
+.alignCenter {
+  text-align: center;
+}
+
+.alignRight {
+  text-align: right;
+}
+
+@media (width <= 768px) {
+  .toolbar,
+  .searchArea,
+  .pagination {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .searchInput {
+    width: 100%;
+    max-width: none;
+  }
+}

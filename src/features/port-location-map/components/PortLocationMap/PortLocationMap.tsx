@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTheme } from '@/shared/theme'
 import styles from './PortLocationMap.module.css'
 
@@ -42,12 +42,24 @@ const MAPLIBRE_STYLE_ID = 'maplibre-gl-style'
 const MAPLIBRE_SCRIPT_URL = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'
 const MAPLIBRE_STYLE_URL = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css'
 
-const OPEN_FREE_MAP_SOURCES = {
-  openmaptiles: {
-    type: 'vector',
-    url: 'https://tiles.openfreemap.org/planet'
-  }
+const OPENMAPTILES_SOURCE = {
+  type: 'vector',
+  url: 'https://tiles.openfreemap.org/planet'
 } as const
+
+// Natural Earth shaded-relief raster — provides ocean/land context at zoom 0-6
+const NE2_SHADED_SOURCE = {
+  type: 'raster',
+  maxzoom: 6,
+  tileSize: 256,
+  tiles: ['https://tiles.openfreemap.org/natural_earth/ne2sr/{z}/{x}/{y}.png']
+} as const
+
+function buildMapSources(_theme: 'light' | 'dark') {
+  // Both themes reference ne2_shaded in their layers (dark uses it at near-zero
+  // opacity for a subtle land/ocean tint). The source must be present in both.
+  return { openmaptiles: OPENMAPTILES_SOURCE, ne2_shaded: NE2_SHADED_SOURCE }
+}
 
 let mapLibreLoader: Promise<MapLibreGlobal> | null = null
 
@@ -119,38 +131,38 @@ function loadMapLibreScript() {
 function getThemePalette(theme: 'light' | 'dark') {
   if (theme === 'dark') {
     return {
-      background: '#0f172a',
-      water: '#102844',
-      waterLine: '#214164',
-      land: '#121b2b',
-      green: '#162739',
-      building: '#233047',
-      buildingEdge: '#364862',
-      roadCase: '#121b2b',
-      roadMain: '#3a6286',
-      roadMinor: '#2a4158',
-      rail: '#53728f',
-      boundary: '#34d399',
-      label: '#e6edf7',
-      labelHalo: '#0f172a'
+      background: '#161c23',
+      water: '#1b2530',
+      waterLine: '#33414e',
+      land: '#161c23',
+      green: '#1c232b',
+      building: '#222b34',
+      buildingEdge: '#3a4652',
+      roadCase: '#161c23',
+      roadMain: '#516171',
+      roadMinor: '#36424d',
+      rail: '#657383',
+      boundary: '#71a7e2',
+      label: '#edf1f5',
+      labelHalo: '#161c23'
     }
   }
 
   return {
-    background: '#edf3f9',
-    water: '#dbe6f2',
-    waterLine: '#bfcedf',
-    land: '#f8fbfe',
-    green: '#e4efe8',
-    building: '#dde6ef',
-    buildingEdge: '#bccada',
-    roadCase: '#f8fbfe',
-    roadMain: '#a3b4c7',
-    roadMinor: '#d5deea',
-    rail: '#90a1b4',
-    boundary: '#0f766e',
+    background: '#ffffff',
+    water: '#f3f7fb',
+    waterLine: '#d9e2ea',
+    land: '#ffffff',
+    green: '#f5f7f9',
+    building: '#eef2f5',
+    buildingEdge: '#d6dde4',
+    roadCase: '#ffffff',
+    roadMain: '#c6d0d8',
+    roadMinor: '#e1e6eb',
+    rail: '#aab6c2',
+    boundary: '#2f6db2',
     label: '#334155',
-    labelHalo: '#f8fbfe'
+    labelHalo: '#ffffff'
   }
 }
 
@@ -160,7 +172,7 @@ function buildMapStyle(theme: 'light' | 'dark') {
   return {
     version: 8,
     name: `port-location-${theme}`,
-    sources: OPEN_FREE_MAP_SOURCES,
+    sources: buildMapSources(theme),
     glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
     layers: [
       {
@@ -170,6 +182,37 @@ function buildMapStyle(theme: 'light' | 'dark') {
           'background-color': palette.background
         }
       },
+      // Natural Earth shaded relief — fills the visual gap at zoom 0-6 where
+      // vector tile data is too sparse to form a recognisable map
+      ...(theme === 'light'
+        ? [
+            {
+              id: 'natural_earth',
+              type: 'raster',
+              source: 'ne2_shaded',
+              maxzoom: 7,
+              paint: {
+                'raster-opacity': ['interpolate', ['exponential', 1.5], ['zoom'], 0, 0.9, 6, 0.12]
+              }
+            }
+          ]
+        : []),
+      // dark mode: a subtle dark-tinted raster helps distinguish land from ocean
+      ...(theme === 'dark'
+        ? [
+            {
+              id: 'natural_earth',
+              type: 'raster',
+              source: 'ne2_shaded',
+              maxzoom: 7,
+              paint: {
+                'raster-opacity': ['interpolate', ['exponential', 1.5], ['zoom'], 0, 0.18, 5, 0.04],
+                'raster-brightness-max': 0.25,
+                'raster-saturation': -1
+              }
+            }
+          ]
+        : []),
       {
         id: 'water',
         type: 'fill',
@@ -239,6 +282,7 @@ function buildMapStyle(theme: 'light' | 'dark') {
         type: 'line',
         source: 'openmaptiles',
         'source-layer': 'transportation',
+        minzoom: 10,
         filter: ['in', 'class', 'motorway', 'trunk', 'primary', 'secondary'],
         layout: {
           'line-join': 'round',
@@ -272,6 +316,7 @@ function buildMapStyle(theme: 'light' | 'dark') {
         type: 'line',
         source: 'openmaptiles',
         'source-layer': 'transportation',
+        minzoom: 10,
         filter: ['in', 'class', 'motorway', 'trunk', 'primary', 'secondary'],
         layout: {
           'line-join': 'round',
@@ -280,7 +325,7 @@ function buildMapStyle(theme: 'light' | 'dark') {
         paint: {
           'line-color': palette.roadMain,
           'line-width': ['interpolate', ['exponential', 1.5], ['zoom'], 5, 0.5, 10, 2, 16, 11],
-          'line-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0.3, 8, 0.82]
+          'line-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0, 11, 0.82]
         }
       },
       {
@@ -288,6 +333,7 @@ function buildMapStyle(theme: 'light' | 'dark') {
         type: 'line',
         source: 'openmaptiles',
         'source-layer': 'transportation',
+        minzoom: 10,
         filter: ['==', 'class', 'rail'],
         paint: {
           'line-color': palette.rail,
@@ -307,26 +353,6 @@ function buildMapStyle(theme: 'light' | 'dark') {
           'line-width': ['interpolate', ['linear'], ['zoom'], 2, 0.5, 10, 1.8],
           'line-dasharray': [4, 2],
           'line-opacity': 0.45
-        }
-      },
-      {
-        id: 'place-label',
-        type: 'symbol',
-        source: 'openmaptiles',
-        'source-layer': 'place',
-        filter: ['in', 'class', 'city', 'town'],
-        layout: {
-          'text-field': '{name}',
-          'text-font': ['Open Sans Regular'],
-          'text-size': ['interpolate', ['linear'], ['zoom'], 4, 10, 8, 14, 12, 18],
-          'text-anchor': 'center',
-          'text-max-width': 8
-        },
-        paint: {
-          'text-color': palette.label,
-          'text-halo-color': palette.labelHalo,
-          'text-halo-width': 1.5,
-          'text-halo-blur': 0.5
         }
       }
     ]
@@ -401,21 +427,6 @@ export function PortLocationMap({
   useEffect(() => {
     themeRef.current = theme
   }, [theme])
-
-  const portSummary = useMemo(() => {
-    if (ports.length === 0) {
-      return null
-    }
-
-    const sortedNames = ports
-      .map(port => port.name)
-      .sort((left, right) => left.localeCompare(right, 'zh-CN'))
-
-    return {
-      count: ports.length,
-      sample: sortedNames.slice(0, 6).join('、')
-    }
-  }, [ports])
 
   useEffect(() => {
     let isCancelled = false
@@ -629,39 +640,10 @@ export function PortLocationMap({
           className={`${styles.map} ${compact ? styles.mapCompact : ''}`.trim()}
         />
 
-        <div className={styles.overlayTop}>
-          <div className={styles.infoCard}>
-            <p className={styles.infoLabel}>地图数据</p>
-            <p className={styles.infoValue}>OpenStreetMap · OpenFreeMap</p>
-          </div>
-          <div className={styles.infoCard}>
-            <p className={styles.infoLabel}>港口数量</p>
-            <p className={styles.infoValue}>{portSummary?.count ?? '--'} 个</p>
-          </div>
-          <div className={styles.infoCard}>
-            <p className={styles.infoLabel}>联动港口</p>
-            <p className={styles.infoValue}>{selectedPortCode ?? '全部港口'}</p>
-          </div>
-        </div>
-
-        <div className={styles.overlayBottom}>
-          <div className={styles.hintCard}>
-            <p className={styles.hintTitle}>查看方式</p>
-            <p className={styles.hintText}>拖拽缩放地图，点击港口编码即可联动筛选其他视图。</p>
-          </div>
-        </div>
-
         {isLoading ? <div className={styles.statusMask}>正在加载港口地图...</div> : null}
 
         {errorMessage ? <div className={styles.statusMask}>{errorMessage}</div> : null}
       </div>
-
-      {portSummary ? (
-        <footer className={styles.summary}>
-          <p className={styles.summaryTitle}>港口样例</p>
-          <p className={styles.summaryText}>{portSummary.sample}</p>
-        </footer>
-      ) : null}
     </section>
   )
 }

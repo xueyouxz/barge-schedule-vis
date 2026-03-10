@@ -1,34 +1,12 @@
 import type { ResolvedTheme } from '@/shared/theme'
 
-const LIGHT_PORT_COLORS = [
-  '#5b8ff9',
-  '#5ad8a6',
-  '#5d7092',
-  '#f6bd16',
-  '#e8684a',
-  '#6dc8ec',
-  '#9270ca',
-  '#ff9d4d',
-  '#269a99',
-  '#ff99c3',
-  '#7b8cff',
-  '#4caf50'
-]
+const LIGHT_PRIMARY = '#2f6db2'
+const LIGHT_SECONDARY = '#d97a1d'
+const LIGHT_FALLBACK = '#9aa6b2'
 
-const DARK_PORT_COLORS = [
-  '#7fb3ff',
-  '#7bd88f',
-  '#9ab0d3',
-  '#ffd166',
-  '#ff8d8d',
-  '#7fd6ff',
-  '#b39ddb',
-  '#ffb86b',
-  '#5fd1c8',
-  '#ffb3d1',
-  '#9aa8ff',
-  '#8adf7d'
-]
+const DARK_PRIMARY = '#71a7e2'
+const DARK_SECONDARY = '#f29a43'
+const DARK_FALLBACK = '#8c98a4'
 
 function hashPortId(portId: string): number {
   let hash = 0
@@ -41,19 +19,26 @@ function hashPortId(portId: string): number {
   return Math.abs(hash)
 }
 
-function getPalette(theme: ResolvedTheme) {
-  return theme === 'dark' ? DARK_PORT_COLORS : LIGHT_PORT_COLORS
+function getPrimary(theme: ResolvedTheme) {
+  return theme === 'dark' ? DARK_PRIMARY : LIGHT_PRIMARY
+}
+
+function getSecondary(theme: ResolvedTheme) {
+  return theme === 'dark' ? DARK_SECONDARY : LIGHT_SECONDARY
+}
+
+function getFallback(theme: ResolvedTheme) {
+  return theme === 'dark' ? DARK_FALLBACK : LIGHT_FALLBACK
 }
 
 export function resolvePortColor(portId: string, theme: ResolvedTheme): string {
   const safePortId = portId.trim()
 
   if (!safePortId) {
-    return 'var(--chart-port-band-fallback)'
+    return getFallback(theme)
   }
 
-  const palette = getPalette(theme)
-  return palette[hashPortId(safePortId) % palette.length]
+  return hashPortId(safePortId) % 2 === 0 ? getPrimary(theme) : getSecondary(theme)
 }
 
 export function buildPortColorMap(portIds: Iterable<string>, theme: ResolvedTheme) {

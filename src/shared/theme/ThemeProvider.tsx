@@ -14,7 +14,7 @@ function getSystemTheme(): ResolvedTheme {
 
 function resolveTheme(mode: ThemeMode): ResolvedTheme {
   if (mode === 'system') {
-    return getSystemTheme()
+    return 'light'
   }
 
   return mode
@@ -26,7 +26,7 @@ function getInitialMode(): ThemeMode {
   }
 
   const storedMode = window.localStorage.getItem(THEME_STORAGE_KEY)
-  if (storedMode === 'light' || storedMode === 'dark' || storedMode === 'system') {
+  if (storedMode === 'light' || storedMode === 'dark') {
     return storedMode
   }
 

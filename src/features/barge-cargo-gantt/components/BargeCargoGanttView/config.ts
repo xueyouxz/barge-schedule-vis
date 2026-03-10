@@ -13,10 +13,6 @@ export const BARGE_CARGO_GANTT_CONFIG = {
   layout: {
     /** 左侧船舶标签栏宽度（px） */
     labelWidth: 0,
-    /** 时间轴上方港口货箱变化区最小高度（px），实际高度按港口数动态扩展 */
-    portPanelHeight: 96,
-    /** 港口货箱变化区每行高度（px），每个港口独占一行 */
-    portRowHeight: 48,
     /** 单条船舶轨道高度（px） */
     rowHeight: 92,
     /** 顶部时间轴头部高度（px） */

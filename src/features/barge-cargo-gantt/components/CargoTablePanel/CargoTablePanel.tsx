@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import * as d3 from 'd3'
 import { useTheme } from '@/shared/theme'
+import { DataTable, type DataTableColumn } from '@/shared/components/DataTable'
 import type { GanttEvent } from '../BargeCargoGanttView/types'
 import { resolvePortColor } from '@/shared/lib/portColors'
 import styles from './CargoTablePanel.module.css'
@@ -37,8 +38,7 @@ type ContainerRecordRow = {
   location?: string
 }
 
-type TimeSortField = '实际离港时间' | 'ETD' | '箱就绪时间'
-type SortOrder = 'asc' | 'desc'
+type LabelValueRow = { label: string; value: string }
 
 const DEFAULT_CONTAINER_RECORDS_PATH = '/data/output/2026-01-13 17-20-38/container_records.csv'
 
@@ -160,9 +160,6 @@ export default function CargoTablePanel({
 }: CargoTablePanelProps) {
   const { theme } = useTheme()
   const [rows, setRows] = useState<ContainerRecordRow[]>([])
-  const [searchKeyword, setSearchKeyword] = useState('')
-  const [timeSortField, setTimeSortField] = useState<TimeSortField>('实际离港时间')
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
   const [loadingRows, setLoadingRows] = useState(false)
   const [rowsError, setRowsError] = useState<string | null>(null)
 
@@ -203,12 +200,6 @@ export default function CargoTablePanel({
     }
   }, [containerRecordsPath])
 
-  useEffect(() => {
-    setSearchKeyword('')
-    setTimeSortField('实际离港时间')
-    setSortOrder('asc')
-  }, [event?.id])
-
   const filteredRows = useMemo(() => {
     if (!event) return []
 
@@ -235,38 +226,6 @@ export default function CargoTablePanel({
       finishRate: total > 0 ? `${Math.round((finishCount / total) * 100)}%` : '-'
     }
   }, [filteredRows])
-
-  const searchedRows = useMemo(() => {
-    const keyword = searchKeyword.trim().toLowerCase()
-    if (!keyword) return filteredRows
-
-    return filteredRows.filter(row =>
-      Object.values(row).some(value =>
-        String(value ?? '')
-          .toLowerCase()
-          .includes(keyword)
-      )
-    )
-  }, [filteredRows, searchKeyword])
-
-  const sortedRows = useMemo(() => {
-    const copied = [...searchedRows]
-
-    copied.sort((rowA, rowB) => {
-      const timeA = parseDateTime(rowA[timeSortField])
-      const timeB = parseDateTime(rowB[timeSortField])
-      const aInvalid = Number.isNaN(timeA)
-      const bInvalid = Number.isNaN(timeB)
-
-      if (aInvalid && bInvalid) return 0
-      if (aInvalid) return 1
-      if (bInvalid) return -1
-
-      return sortOrder === 'asc' ? timeA - timeB : timeB - timeA
-    })
-
-    return copied
-  }, [searchedRows, timeSortField, sortOrder])
 
   const cargoMetricRows = useMemo(() => {
     if (!event) return []
@@ -300,32 +259,260 @@ export default function CargoTablePanel({
     return []
   }, [event])
 
-  const handleSortTimeField = (field: TimeSortField) => {
-    if (timeSortField === field) {
-      setSortOrder(previous => (previous === 'asc' ? 'desc' : 'asc'))
-      return
+  const onboardRows = useMemo<LabelValueRow[]>(() => {
+    if (!event?.cargo) {
+      return []
     }
 
-    setTimeSortField(field)
-    setSortOrder('asc')
-  }
+    return [
+      { label: '大型箱', value: fmt(event.cargo.big) },
+      { label: '普通箱', value: fmt(event.cargo.normal) },
+      { label: '危险品箱', value: fmt(event.cargo.danger) },
+      { label: '合计在船', value: fmt(event.cargo.onboard) }
+    ]
+  }, [event])
 
-  const renderSortMark = (field: TimeSortField): string => {
-    if (timeSortField !== field) return '↕'
-    return sortOrder === 'asc' ? '▲' : '▼'
-  }
+  const getPortTagStyle = useCallback(
+    (portId?: string) => {
+      const text = (portId || '').trim()
+      if (!text) return undefined
 
-  const getPortTagStyle = (portId?: string) => {
-    const text = (portId || '').trim()
-    if (!text) return undefined
+      const color = resolvePortColor(text, theme)
+      return {
+        backgroundColor: withAlpha(color, 0.28),
+        borderColor: withAlpha(color, 0.65),
+        color: getReadableTextColor(color)
+      }
+    },
+    [theme]
+  )
 
-    const color = resolvePortColor(text, theme)
-    return {
-      backgroundColor: withAlpha(color, 0.28),
-      borderColor: withAlpha(color, 0.65),
-      color: getReadableTextColor(color)
-    }
-  }
+  const cargoMetricColumns = useMemo<DataTableColumn<LabelValueRow>[]>(
+    () => [
+      { key: 'label', header: '指标', accessor: 'label' },
+      {
+        key: 'value',
+        header: '数值',
+        accessor: 'value',
+        align: 'right',
+        headerAlign: 'right',
+        className: styles.number
+      }
+    ],
+    []
+  )
+
+  const onboardColumns = useMemo<DataTableColumn<LabelValueRow>[]>(
+    () => [
+      {
+        key: 'label',
+        header: '类型',
+        renderCell: row => (row.label === '合计在船' ? <strong>{row.label}</strong> : row.label)
+      },
+      {
+        key: 'value',
+        header: '在船',
+        align: 'right',
+        headerAlign: 'right',
+        className: styles.number,
+        renderCell: row => (row.label === '合计在船' ? <strong>{row.value}</strong> : row.value)
+      }
+    ],
+    []
+  )
+
+  const containerColumns = useMemo<DataTableColumn<ContainerRecordRow>[]>(
+    () => [
+      {
+        key: '箱号',
+        header: '箱号',
+        className: styles.mono,
+        renderCell: row => row.箱号 || '-'
+      },
+      {
+        key: '实际离港时间',
+        header: '实际离港时间',
+        sortable: true,
+        sortAccessor: row => {
+          const timestamp = parseDateTime(row.实际离港时间)
+          return Number.isNaN(timestamp) ? null : timestamp
+        },
+        renderCell: row => row.实际离港时间 || '-'
+      },
+      {
+        key: 'L/F/E',
+        header: 'L/F/E',
+        align: 'center',
+        headerAlign: 'center',
+        renderCell: row => (
+          <span className={`${styles.badge} ${styles.badgeType}`}>{row['L/F/E'] || '-'}</span>
+        )
+      },
+      {
+        key: '危类',
+        header: '危类',
+        align: 'center',
+        headerAlign: 'center',
+        renderCell: row => row.危类 || '-'
+      },
+      { key: '箱主', header: '箱主', renderCell: row => row.箱主 || '-' },
+      {
+        key: '内外贸（D/F）',
+        header: '内外贸（D/F）',
+        align: 'center',
+        headerAlign: 'center',
+        renderCell: row => row['内外贸（D/F）'] || '-'
+      },
+      {
+        key: '起运港码头',
+        header: '起运港码头',
+        minWidth: 92,
+        renderCell: row => (
+          <span className={styles.portTag} style={getPortTagStyle(row.起运港码头)}>
+            {row.起运港码头 || '-'}
+          </span>
+        )
+      },
+      {
+        key: '目的港码头',
+        header: '目的港码头',
+        minWidth: 92,
+        renderCell: row => (
+          <span className={styles.portTag} style={getPortTagStyle(row.目的港码头)}>
+            {row.目的港码头 || '-'}
+          </span>
+        )
+      },
+      { key: '干线船名', header: '干线船名', renderCell: row => row.干线船名 || '-' },
+      { key: '干线航次', header: '干线航次', renderCell: row => row.干线航次 || '-' },
+      {
+        key: '干线码头',
+        header: '干线码头',
+        minWidth: 92,
+        renderCell: row => (
+          <span className={styles.portTag} style={getPortTagStyle(row.干线码头)}>
+            {row.干线码头 || '-'}
+          </span>
+        )
+      },
+      {
+        key: '重量',
+        header: '重量',
+        align: 'right',
+        headerAlign: 'right',
+        className: styles.number,
+        renderCell: row => fmtNum(row.重量)
+      },
+      {
+        key: 'TEU',
+        header: 'TEU',
+        align: 'right',
+        headerAlign: 'right',
+        className: styles.number,
+        renderCell: row => fmtNum(row.TEU)
+      },
+      {
+        key: 'ETD',
+        header: 'ETD',
+        sortable: true,
+        sortAccessor: row => {
+          const timestamp = parseDateTime(row.ETD)
+          return Number.isNaN(timestamp) ? null : timestamp
+        },
+        renderCell: row => row.ETD || '-'
+      },
+      {
+        key: '箱就绪时间',
+        header: '箱就绪时间',
+        sortable: true,
+        sortAccessor: row => {
+          const timestamp = parseDateTime(row.箱就绪时间)
+          return Number.isNaN(timestamp) ? null : timestamp
+        },
+        renderCell: row => row.箱就绪时间 || '-'
+      },
+      {
+        key: '是否中转',
+        header: '是否中转',
+        align: 'center',
+        headerAlign: 'center',
+        renderCell: row => row.是否中转 || '-'
+      },
+      {
+        key: 'route',
+        header: 'route',
+        minWidth: 180,
+        renderCell: row => {
+          const routePorts = parseRoutePath(row.route)
+
+          if (routePorts.length === 0) {
+            return '-'
+          }
+
+          return (
+            <div className={styles.routePath}>
+              {routePorts.map((port, index, array) => (
+                <div className={styles.routeNodeWrap} key={`${row.箱号}-route-${index}`}>
+                  <span className={styles.routeNode} style={getPortTagStyle(port)}>
+                    {port}
+                  </span>
+                  {index < array.length - 1 && (
+                    <svg className={styles.routeIcon} viewBox='0 0 16 16' aria-hidden='true'>
+                      <path
+                        d='M2 8h10'
+                        stroke='currentColor'
+                        strokeLinecap='round'
+                        strokeWidth='1.6'
+                      />
+                      <path
+                        d='M9 4l4 4-4 4'
+                        fill='none'
+                        stroke='currentColor'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth='1.6'
+                      />
+                    </svg>
+                  )}
+                </div>
+              ))}
+            </div>
+          )
+        }
+      },
+      {
+        key: 'current_leg',
+        header: 'current_leg',
+        align: 'center',
+        headerAlign: 'center',
+        renderCell: row => row.current_leg || '-'
+      },
+      {
+        key: 'location',
+        header: 'location',
+        minWidth: 92,
+        renderCell: row => (
+          <span className={styles.portTag} style={getPortTagStyle(row.location)}>
+            {row.location || '-'}
+          </span>
+        )
+      },
+      {
+        key: '状态',
+        header: '状态',
+        align: 'center',
+        headerAlign: 'center',
+        renderCell: row => (
+          <span
+            className={`${styles.badge} ${row.status === 'finish' ? styles.badgeDone : styles.badgePending}`}
+          >
+            {row.status || '-'}
+          </span>
+        )
+      }
+    ],
+    [getPortTagStyle]
+  )
 
   if (!event) {
     return (
@@ -378,58 +565,18 @@ export default function CargoTablePanel({
           >
             {event.type === 'unloading' ? '卸货明细' : '装货明细'}
           </h4>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>指标</th>
-                <th style={{ textAlign: 'right' }}>数值</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cargoMetricRows.map(row => (
-                <tr key={row.label}>
-                  <td>{row.label}</td>
-                  <td className={styles.number}>{row.value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataTable
+            columns={cargoMetricColumns}
+            rows={cargoMetricRows}
+            getRowKey={row => row.label}
+          />
         </div>
       )}
 
       {event.cargo && (
         <div className={styles.section}>
           <h4 className={`${styles.sectionTitle} ${styles.sectionTitleOnboard}`}>船上货物状态</h4>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>类型</th>
-                <th style={{ textAlign: 'right' }}>在船</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>大型箱</td>
-                <td className={styles.number}>{fmt(event.cargo.big)}</td>
-              </tr>
-              <tr>
-                <td>普通箱</td>
-                <td className={styles.number}>{fmt(event.cargo.normal)}</td>
-              </tr>
-              <tr>
-                <td>危险品箱</td>
-                <td className={styles.number}>{fmt(event.cargo.danger)}</td>
-              </tr>
-              <tr>
-                <td>
-                  <strong>合计在船</strong>
-                </td>
-                <td className={styles.number}>
-                  <strong>{fmt(event.cargo.onboard)}</strong>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <DataTable columns={onboardColumns} rows={onboardRows} getRowKey={row => row.label} />
         </div>
       )}
 
@@ -439,180 +586,28 @@ export default function CargoTablePanel({
         {!loadingRows && rowsError && (
           <div className={styles.stateText}>货箱数据加载失败：{rowsError}</div>
         )}
-        {!loadingRows && !rowsError && filteredRows.length > 0 && (
-          <div className={styles.searchBarRow}>
-            <input
-              className={styles.searchInput}
-              onChange={changeEvent => setSearchKeyword(changeEvent.target.value)}
-              placeholder='搜索任意字段（箱号/航次/码头/状态等）'
-              type='text'
-              value={searchKeyword}
+        {!loadingRows && !rowsError && (
+          <div>
+            <DataTable
+              columns={containerColumns}
+              rows={filteredRows}
+              getRowKey={row => `${row.箱号}-${row.ETD}`}
+              enableSearch
+              searchPlaceholder='搜索任意字段（箱号/航次/码头/状态等）'
+              emptyText={({ searchKeyword }) =>
+                searchKeyword
+                  ? `未找到匹配“${searchKeyword}”的记录`
+                  : '当前驳船在该港口暂无匹配货箱记录'
+              }
+              enablePagination
+              defaultPageSize={50}
+              pageSizeOptions={[20, 50, 100]}
+              defaultSort={{ columnKey: '实际离港时间', order: 'asc' }}
+              maxHeight={380}
+              stickyHeader
+              virtualized
+              rowHeight={38}
             />
-            <span className={styles.searchCount}>
-              显示 {searchedRows.length} / {filteredRows.length}
-            </span>
-          </div>
-        )}
-        {!loadingRows && !rowsError && filteredRows.length === 0 && (
-          <div className={styles.stateText}>当前驳船在该港口暂无匹配货箱记录</div>
-        )}
-        {!loadingRows && !rowsError && filteredRows.length > 0 && searchedRows.length === 0 && (
-          <div className={styles.stateText}>未找到匹配“{searchKeyword}”的记录</div>
-        )}
-        {!loadingRows && !rowsError && searchedRows.length > 0 && (
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>箱号</th>
-                  <th>
-                    <button
-                      className={styles.sortBtn}
-                      onClick={() => handleSortTimeField('实际离港时间')}
-                      type='button'
-                    >
-                      实际离港时间{' '}
-                      <span className={styles.sortMark}>{renderSortMark('实际离港时间')}</span>
-                    </button>
-                  </th>
-                  <th style={{ textAlign: 'center' }}>L/F/E</th>
-                  <th style={{ textAlign: 'center' }}>危类</th>
-                  <th>箱主</th>
-                  <th style={{ textAlign: 'center' }}>内外贸（D/F）</th>
-                  <th>起运港码头</th>
-                  <th>目的港码头</th>
-                  <th>干线船名</th>
-                  <th>干线航次</th>
-                  <th>干线码头</th>
-                  <th style={{ textAlign: 'right' }}>重量</th>
-                  <th style={{ textAlign: 'right' }}>TEU</th>
-                  <th>
-                    <button
-                      className={styles.sortBtn}
-                      onClick={() => handleSortTimeField('ETD')}
-                      type='button'
-                    >
-                      ETD <span className={styles.sortMark}>{renderSortMark('ETD')}</span>
-                    </button>
-                  </th>
-                  <th>
-                    <button
-                      className={styles.sortBtn}
-                      onClick={() => handleSortTimeField('箱就绪时间')}
-                      type='button'
-                    >
-                      箱就绪时间{' '}
-                      <span className={styles.sortMark}>{renderSortMark('箱就绪时间')}</span>
-                    </button>
-                  </th>
-                  <th style={{ textAlign: 'center' }}>是否中转</th>
-                  <th>route</th>
-                  <th style={{ textAlign: 'center' }}>current_leg</th>
-                  <th>location</th>
-                  <th style={{ textAlign: 'center' }}>状态</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedRows.slice(0, 120).map(row => (
-                  <tr key={`${row.箱号}-${row.ETD}`}>
-                    <td className={styles.mono}>{row.箱号 || '-'}</td>
-                    <td>{row.实际离港时间 || '-'}</td>
-                    <td style={{ textAlign: 'center' }}>
-                      <span className={`${styles.badge} ${styles.badgeType}`}>
-                        {row['L/F/E'] || '-'}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'center' }}>{row.危类 || '-'}</td>
-                    <td>{row.箱主 || '-'}</td>
-                    <td style={{ textAlign: 'center' }}>{row['内外贸（D/F）'] || '-'}</td>
-                    <td>
-                      <span className={styles.portTag} style={getPortTagStyle(row.起运港码头)}>
-                        {row.起运港码头 || '-'}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={styles.portTag} style={getPortTagStyle(row.目的港码头)}>
-                        {row.目的港码头 || '-'}
-                      </span>
-                    </td>
-                    <td>{row.干线船名 || '-'}</td>
-                    <td>{row.干线航次 || '-'}</td>
-                    <td>
-                      <span className={styles.portTag} style={getPortTagStyle(row.干线码头)}>
-                        {row.干线码头 || '-'}
-                      </span>
-                    </td>
-                    <td className={styles.number}>{fmtNum(row.重量)}</td>
-                    <td className={styles.number}>{fmtNum(row.TEU)}</td>
-                    <td>{row.ETD || '-'}</td>
-                    <td>{row.箱就绪时间 || '-'}</td>
-                    <td style={{ textAlign: 'center' }}>{row.是否中转 || '-'}</td>
-                    <td>
-                      <div className={styles.routePath}>
-                        {(() => {
-                          const routePorts = parseRoutePath(row.route)
-
-                          if (routePorts.length === 0) {
-                            return '-'
-                          }
-
-                          return routePorts.map((port, index, array) => (
-                            <div
-                              className={styles.routeNodeWrap}
-                              key={`${row.箱号}-route-${index}`}
-                            >
-                              <span className={styles.routeNode} style={getPortTagStyle(port)}>
-                                {port}
-                              </span>
-                              {index < array.length - 1 && (
-                                <svg
-                                  className={styles.routeIcon}
-                                  viewBox='0 0 16 16'
-                                  aria-hidden='true'
-                                >
-                                  <path
-                                    d='M2 8h10'
-                                    stroke='currentColor'
-                                    strokeLinecap='round'
-                                    strokeWidth='1.6'
-                                  />
-                                  <path
-                                    d='M9 4l4 4-4 4'
-                                    fill='none'
-                                    stroke='currentColor'
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth='1.6'
-                                  />
-                                </svg>
-                              )}
-                            </div>
-                          ))
-                        })()}
-                      </div>
-                    </td>
-                    <td style={{ textAlign: 'center' }}>{row.current_leg || '-'}</td>
-                    <td>
-                      <span className={styles.portTag} style={getPortTagStyle(row.location)}>
-                        {row.location || '-'}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'center' }}>
-                      <span
-                        className={`${styles.badge} ${
-                          row.status === 'finish' ? styles.badgeDone : styles.badgePending
-                        }`}
-                      >
-                        {row.status || '-'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {sortedRows.length > 120 && (
-              <div className={styles.stateText}>仅展示前 120 条，当前共 {sortedRows.length} 条</div>
-            )}
           </div>
         )}
       </div>

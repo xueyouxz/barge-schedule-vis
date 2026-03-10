@@ -23,7 +23,6 @@ export interface ThemeTokens {
     textMuted: string
     textSecondary: string
     grid: string
-    portPanelBg: string
     dayBandEven: string
     dayBandOdd: string
     gridLineColor: string

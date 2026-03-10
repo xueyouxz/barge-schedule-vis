@@ -1,0 +1,23 @@
+.viewport {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #fff;
+}
+
+.viewport::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: '';
+  background:
+    linear-gradient(rgb(125 139 153 / 5%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(125 139 153 / 5%) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.shell {
+  position: absolute;
+  inset: 0 auto auto 0;
+}
