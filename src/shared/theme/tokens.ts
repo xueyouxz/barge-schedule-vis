@@ -47,6 +47,3 @@ export const themeTokens: ThemeTokens = {
     unloadGradientBottom: 'var(--chart-unload-gradient-bottom)'
   }
 }
-
-export const DEFAULT_THEME_MODE = 'system' as const
-export const THEME_STORAGE_KEY = 'barge-schedule-vis.theme'

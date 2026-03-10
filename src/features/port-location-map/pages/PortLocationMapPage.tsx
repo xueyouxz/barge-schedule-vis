@@ -5,11 +5,11 @@ import { PortLocationMap } from '../components/PortLocationMap'
 import styles from './PortLocationMapPage.module.css'
 
 export default function PortLocationMapPage() {
-  const { mode } = useTheme()
+  const { theme } = useTheme()
   const metrics = [
     { label: '模式', value: 'Map' },
     { label: '底图', value: 'GL' },
-    { label: '主题', value: mode === 'dark' ? 'Dark' : 'Light' }
+    { label: '主题', value: theme === 'dark' ? 'Dark' : 'Light' }
   ]
 
   return (

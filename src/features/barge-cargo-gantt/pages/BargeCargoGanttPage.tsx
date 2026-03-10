@@ -10,14 +10,14 @@ import styles from './BargeCargoGanttPage.module.css'
 
 export default function BargeCargoGanttPage() {
   const [selectedEvent, setSelectedEvent] = useState<GanttEvent | null>(null)
-  const { mode } = useTheme()
+  const { theme } = useTheme()
   const { ref, width } = useElementWidth<HTMLDivElement>()
 
   const selectionLabel = selectedEvent ? selectedEvent.port || selectedEvent.vessel : '未选中'
   const metrics = [
     { label: '模式', value: 'Gantt' },
     { label: '选择', value: selectionLabel },
-    { label: '主题', value: mode === 'dark' ? 'Dark' : 'Light' }
+    { label: '主题', value: theme === 'dark' ? 'Dark' : 'Light' }
   ]
 
   return (

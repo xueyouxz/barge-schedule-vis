@@ -53,7 +53,5 @@ export interface ThemeTokens {
 export interface ThemeContextValue {
   mode: ThemeMode
   theme: ResolvedTheme
-  setMode: (mode: ThemeMode) => void
-  toggleTheme: () => void
   tokens: ThemeTokens
 }

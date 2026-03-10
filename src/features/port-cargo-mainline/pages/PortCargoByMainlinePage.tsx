@@ -6,12 +6,12 @@ import { PortCargoByMainlineView } from '../components/PortCargoByMainlineView'
 import styles from './PortCargoByMainlinePage.module.css'
 
 export default function PortCargoByMainlinePage() {
-  const { mode } = useTheme()
+  const { theme } = useTheme()
   const { ref, width } = useElementWidth<HTMLDivElement>()
   const metrics = [
     { label: '模式', value: 'Origin' },
     { label: '图层', value: 'Cargo' },
-    { label: '主题', value: mode === 'dark' ? 'Dark' : 'Light' }
+    { label: '主题', value: theme === 'dark' ? 'Dark' : 'Light' }
   ]
 
   return (

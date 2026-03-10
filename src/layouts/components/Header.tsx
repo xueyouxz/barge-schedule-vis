@@ -1,5 +1,4 @@
 import { NavLink } from 'react-router-dom'
-import { useTheme } from '@/shared/theme'
 import styles from './Header.module.css'
 
 const navItems = [
@@ -10,8 +9,6 @@ const navItems = [
 ]
 
 export function Header() {
-  const { mode, toggleTheme } = useTheme()
-
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
@@ -34,10 +31,6 @@ export function Header() {
             </NavLink>
           ))}
         </nav>
-
-        <button type='button' className={styles.themeButton} onClick={toggleTheme}>
-          {mode === 'dark' ? '切换浅色' : '切换深色'}
-        </button>
       </div>
     </header>
   )
