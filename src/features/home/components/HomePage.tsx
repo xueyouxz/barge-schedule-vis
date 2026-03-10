@@ -5,6 +5,7 @@ import { DashboardShell } from '@/shared/components/DashboardShell'
 import { WidgetHeader } from '@/shared/components/WidgetHeader'
 import { useContainerSize } from '@/shared/lib/useContainerSize'
 import { BargeCargoGanttView, type GanttEvent } from '@/features/barge-cargo-gantt'
+import { useBargeCargoGanttData } from '@/features/barge-cargo-gantt/components/BargeCargoGanttView/hooks/useBargeCargoGanttData'
 import { PortCargoByMainlineView } from '@/features/port-cargo-mainline'
 import { PortLocationMap } from '@/features/port-location-map'
 import styles from './HomePage.module.css'
@@ -51,6 +52,7 @@ function ViewPanel({ className, title, extra, icon, children, renderStatic }: Vi
 export default function HomePage() {
   const dispatch = useAppDispatch()
   const activePort = useAppSelector(state => state.dashboardFilter.selectedPort) ?? undefined
+  const { error: ganttError } = useBargeCargoGanttData()
 
   const nowLabel = useMemo(() => {
     const formatter = new Intl.DateTimeFormat('zh-CN', {
@@ -147,17 +149,21 @@ export default function HomePage() {
           <ViewPanel
             className={styles.ganttPanel}
             title='驳船作业时序甘特'
-            extra={activePort ? `聚焦 ${activePort}` : '全量视图'}
+            extra={ganttError ? '加载失败' : activePort ? `聚焦 ${activePort}` : '全量视图'}
             icon={<ShipIcon />}
           >
-            {size => (
-              <BargeCargoGanttView
-                width={size.width}
-                height={size.height}
-                highlightPort={activePort}
-                onBarClick={handleGanttSelection}
-              />
-            )}
+            {size =>
+              ganttError ? (
+                <div>甘特图数据加载失败：{ganttError}</div>
+              ) : (
+                <BargeCargoGanttView
+                  width={size.width}
+                  height={size.height}
+                  highlightPort={activePort}
+                  onBarClick={handleGanttSelection}
+                />
+              )
+            }
           </ViewPanel>
         </section>
       </section>

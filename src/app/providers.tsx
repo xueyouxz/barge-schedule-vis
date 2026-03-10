@@ -7,8 +7,8 @@ import { ThemeProvider } from '@/shared/theme'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000,
-      gcTime: 10 * 60 * 1000,
+      staleTime: Number.POSITIVE_INFINITY,
+      gcTime: 60 * 60 * 1000,
       retry: 1
     }
   }

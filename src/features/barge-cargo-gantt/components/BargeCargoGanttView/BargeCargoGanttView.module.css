@@ -30,6 +30,13 @@
   color: var(--chart-text-muted);
 }
 
+.error {
+  padding: 10px 14px;
+  font-size: 11px;
+  color: var(--chart-load);
+  border-top: 1px solid color-mix(in srgb, var(--chart-load) 24%, transparent);
+}
+
 .cargoPopup {
   position: absolute;
   z-index: 8;

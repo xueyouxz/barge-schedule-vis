@@ -204,6 +204,35 @@
   color: var(--chart-text-muted);
 }
 
+.skeleton {
+  display: grid;
+  gap: 8px;
+  padding: 6px 0 2px;
+}
+
+.skeletonRow {
+  height: 32px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--chart-border) 16%, transparent) 0%,
+    color-mix(in srgb, var(--chart-border) 28%, transparent) 50%,
+    color-mix(in srgb, var(--chart-border) 16%, transparent) 100%
+  );
+  background-size: 200% 100%;
+  border: 1px solid color-mix(in srgb, var(--chart-border) 48%, transparent);
+  animation: skeleton-shift 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-shift {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 .empty {
   display: flex;
   flex-direction: column;

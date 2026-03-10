@@ -91,7 +91,11 @@ export default function BargeCargoGanttView({
     highlightPortRef.current = highlightPort
   }, [highlightPort])
 
-  const { data, loading } = useBargeCargoGanttData(infoPath, recordsPath, containerRecordsPath)
+  const { data, loading, error } = useBargeCargoGanttData(
+    infoPath,
+    recordsPath,
+    containerRecordsPath
+  )
 
   const portColorMap = useMemo(() => {
     if (!data) {
@@ -773,6 +777,7 @@ export default function BargeCargoGanttView({
       }}
     >
       {loading && <div className={styles.loading}>正在加载仿真数据...</div>}
+      {error && <div className={styles.error}>甘特图数据加载失败：{error}</div>}
 
       <div
         className={styles.wrap}

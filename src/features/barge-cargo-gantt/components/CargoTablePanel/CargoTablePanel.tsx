@@ -419,7 +419,14 @@ export default function CargoTablePanel({
 
       <div className={styles.section}>
         <h4 className={`${styles.sectionTitle} ${styles.sectionTitleContainer}`}>货箱明细</h4>
-        {loadingRows && <div className={styles.stateText}>正在加载货箱数据…</div>}
+        {loadingRows && (
+          <div className={styles.skeleton} aria-hidden='true'>
+            <div className={styles.stateText}>正在加载货箱数据…</div>
+            {Array.from({ length: 6 }, (_, index) => (
+              <div className={styles.skeletonRow} key={`container-skeleton-${index}`} />
+            ))}
+          </div>
+        )}
         {!loadingRows && rowsError && (
           <div className={styles.stateText}>货箱数据加载失败：{rowsError}</div>
         )}
