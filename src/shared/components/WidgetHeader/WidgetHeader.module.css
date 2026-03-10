@@ -5,8 +5,7 @@
   min-width: 0;
   padding-bottom: 0.42rem;
   margin-bottom: 0.45rem;
-  border-bottom: 1px solid
-    var(--home-border, color-mix(in srgb, var(--color-border) 88%, transparent));
+  border-bottom: 1px solid color-mix(in srgb, var(--chart-border) 88%, transparent);
 }
 
 .icon {
@@ -18,7 +17,7 @@
   font-size: 0.64rem;
   font-weight: 700;
   line-height: 1;
-  color: var(--home-blue, var(--color-accent));
+  color: var(--chart-unload);
 }
 
 .title {
@@ -27,7 +26,7 @@
   font-family: var(--font-body);
   font-size: 0.78rem;
   font-weight: 700;
-  color: var(--home-text-strong, var(--color-text));
+  color: var(--color-text-strong);
   text-overflow: ellipsis;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -38,7 +37,7 @@
   font-family: var(--font-body);
   font-size: 0.64rem;
   font-weight: 600;
-  color: var(--home-muted, var(--color-muted));
+  color: var(--color-muted);
   letter-spacing: 0.01em;
   white-space: nowrap;
 }

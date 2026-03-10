@@ -43,7 +43,7 @@
   font-size: 12px;
   color: var(--chart-text);
   text-align: center;
-  background: rgb(255 255 255 / 88%);
+  background: color-mix(in srgb, var(--color-background) 88%, transparent);
 }
 
 .marker {
@@ -61,7 +61,7 @@
   width: 0.7rem;
   height: 0.7rem;
   background: var(--chart-unload);
-  border: 1px solid #fff;
+  border: 1px solid var(--color-background);
   border-radius: 999px;
 }
 
@@ -142,7 +142,7 @@
 }
 
 .stage :global(.maplibregl-ctrl-group button:hover) {
-  background: #f7f9fb;
+  background: var(--chart-row-background-odd);
 }
 
 .stage :global(.maplibregl-ctrl-group button .maplibregl-ctrl-icon) {

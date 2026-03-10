@@ -7,9 +7,14 @@
   --color-shell-glow-primary: rgb(0 0 0 / 0%);
   --color-shell-glow-secondary: rgb(0 0 0 / 0%);
   --color-text: #1f2933;
+  --color-text-strong: #11161c;
   --color-muted: #6f7b87;
+  --color-muted-strong: #55616d;
   --color-accent: #d97a1d;
   --color-border: rgb(125 139 153 / 24%);
+  --color-border-strong: #b7c1ca;
+  --color-eyebrow-text: #2f6db2;
+  --color-eyebrow-dot: #2f6db2;
   --chart-background: #fff;
   --chart-surface: #fff;
   --chart-border: #cfd7df;
@@ -23,6 +28,7 @@
   --chart-axis-label-color: #586471;
   --chart-row-background-even: #fff;
   --chart-row-background-odd: #f7f9fb;
+  --chart-selected-row-fill: rgb(217 122 29 / 10%);
   --chart-sail: #8a949e;
   --chart-load: #d97a1d;
   --chart-unload: #2f6db2;
@@ -47,9 +53,14 @@
   --color-shell-glow-primary: rgb(0 0 0 / 0%);
   --color-shell-glow-secondary: rgb(0 0 0 / 0%);
   --color-text: #edf1f5;
+  --color-text-strong: #f5f8fa;
   --color-muted: #a2adb8;
+  --color-muted-strong: #c3ccd4;
   --color-accent: #f29a43;
   --color-border: rgb(162 173 184 / 22%);
+  --color-border-strong: #4a5568;
+  --color-eyebrow-text: #84ccff;
+  --color-eyebrow-dot: #38bdf8;
   --chart-background: #161c23;
   --chart-surface: #161c23;
   --chart-border: #394550;
@@ -63,6 +74,7 @@
   --chart-axis-label-color: #bcc5ce;
   --chart-row-background-even: #161c23;
   --chart-row-background-odd: #1a2129;
+  --chart-selected-row-fill: rgb(242 154 67 / 12%);
   --chart-sail: #808c97;
   --chart-load: #f29a43;
   --chart-unload: #71a7e2;

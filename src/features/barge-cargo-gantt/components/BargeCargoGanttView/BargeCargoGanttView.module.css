@@ -100,7 +100,7 @@
   flex: 1;
   height: 14px;
   overflow: hidden;
-  background: #eef2f5;
+  background: var(--chart-surface);
 }
 
 .portBarChartFill {

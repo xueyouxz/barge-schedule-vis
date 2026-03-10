@@ -179,7 +179,7 @@ export default function PortCargoByMainlineView({
   const dividerStroke = chart.gridLineColor
   const blockBackground = chart.surface
   const selectedStroke = chart.load
-  const selectedRowFill = theme === 'dark' ? 'rgba(242, 154, 67, 0.12)' : 'rgba(217, 122, 29, 0.10)'
+  const selectedRowFill = chart.selectedRowFill
 
   return (
     <div className={styles.container}>

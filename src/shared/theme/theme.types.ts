@@ -11,9 +11,14 @@ export interface ThemeTokens {
     shellGlowPrimary: string
     shellGlowSecondary: string
     text: string
+    textStrong: string
     muted: string
+    mutedStrong: string
     accent: string
     border: string
+    borderStrong: string
+    eyebrowText: string
+    eyebrowDot: string
   }
   chart: {
     background: string
@@ -29,6 +34,7 @@ export interface ThemeTokens {
     axisLabelColor: string
     rowBackgroundEven: string
     rowBackgroundOdd: string
+    selectedRowFill: string
     sail: string
     load: string
     unload: string

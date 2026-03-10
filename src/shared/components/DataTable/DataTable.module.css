@@ -116,7 +116,7 @@
 }
 
 .table tbody tr:hover {
-  background: #f7f9fb;
+  background: var(--chart-row-background-odd);
 }
 
 .emptyCell {

@@ -9,9 +9,14 @@ export const themeTokens: ThemeTokens = {
     shellGlowPrimary: 'var(--color-shell-glow-primary)',
     shellGlowSecondary: 'var(--color-shell-glow-secondary)',
     text: 'var(--color-text)',
+    textStrong: 'var(--color-text-strong)',
     muted: 'var(--color-muted)',
+    mutedStrong: 'var(--color-muted-strong)',
     accent: 'var(--color-accent)',
-    border: 'var(--color-border)'
+    border: 'var(--color-border)',
+    borderStrong: 'var(--color-border-strong)',
+    eyebrowText: 'var(--color-eyebrow-text)',
+    eyebrowDot: 'var(--color-eyebrow-dot)'
   },
   chart: {
     background: 'var(--chart-background)',
@@ -27,6 +32,7 @@ export const themeTokens: ThemeTokens = {
     axisLabelColor: 'var(--chart-axis-label-color)',
     rowBackgroundEven: 'var(--chart-row-background-even)',
     rowBackgroundOdd: 'var(--chart-row-background-odd)',
+    selectedRowFill: 'var(--chart-selected-row-fill)',
     sail: 'var(--chart-sail)',
     load: 'var(--chart-load)',
     unload: 'var(--chart-unload)',
@@ -42,5 +48,5 @@ export const themeTokens: ThemeTokens = {
   }
 }
 
-export const DEFAULT_THEME_MODE = 'light' as const
+export const DEFAULT_THEME_MODE = 'system' as const
 export const THEME_STORAGE_KEY = 'barge-schedule-vis.theme'

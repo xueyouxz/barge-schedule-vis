@@ -1,14 +1,4 @@
 .page {
-  --home-text: #1f2933;
-  --home-text-strong: #11161c;
-  --home-muted: #6f7b87;
-  --home-muted-strong: #55616d;
-  --home-blue: #2f6db2;
-  --home-orange: #d97a1d;
-  --home-border: #cfd7df;
-  --home-border-strong: #b7c1ca;
-  --home-panel-bg: #fff;
-
   display: grid;
   grid-template:
     'header header header' 118px
@@ -19,8 +9,8 @@
   width: 1920px;
   height: 1080px;
   padding: 12px;
-  color: var(--home-text);
-  background: #fff;
+  color: var(--color-text);
+  background: var(--color-background);
 }
 
 .hero {
@@ -30,8 +20,8 @@
   gap: 0.75rem;
   align-items: stretch;
   padding: 0.8rem 0.95rem;
-  background: var(--home-panel-bg);
-  border: 1px solid var(--home-border-strong);
+  background: var(--color-background);
+  border: 1px solid var(--color-border-strong);
 }
 
 .heroMain,
@@ -53,7 +43,7 @@
   padding: 0;
   font-size: 0.62rem;
   font-weight: 700;
-  color: var(--home-blue);
+  color: var(--chart-unload);
   text-transform: uppercase;
   letter-spacing: 0.16em;
 }
@@ -63,7 +53,7 @@
   font-size: 1.72rem;
   font-weight: 700;
   line-height: 1.04;
-  color: var(--home-text-strong);
+  color: var(--color-text-strong);
   letter-spacing: 0;
 }
 
@@ -71,7 +61,7 @@
   max-width: 44rem;
   font-size: 0.76rem;
   line-height: 1.38;
-  color: var(--home-muted);
+  color: var(--color-muted);
 }
 
 .metricGrid {
@@ -86,13 +76,13 @@
   gap: 0.12rem;
   padding: 0.48rem 0.58rem;
   background: transparent;
-  border: 1px solid var(--home-border);
+  border: 1px solid var(--chart-border);
 }
 
 .metricLabel {
   font-size: 0.58rem;
   font-weight: 700;
-  color: var(--home-muted);
+  color: var(--color-muted);
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
@@ -102,7 +92,7 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.15;
-  color: var(--home-text-strong);
+  color: var(--color-text-strong);
 }
 
 .heroMeta {
@@ -122,14 +112,14 @@
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1;
-  color: var(--home-muted-strong);
+  color: var(--color-muted-strong);
   background: transparent;
-  border: 1px solid var(--home-border);
+  border: 1px solid var(--chart-border);
 }
 
 .metaPill {
-  color: var(--home-orange);
-  border-color: color-mix(in srgb, var(--home-orange) 36%, var(--home-border));
+  color: var(--color-accent);
+  border-color: color-mix(in srgb, var(--color-accent) 36%, var(--chart-border));
 }
 
 .dashboardGrid {
@@ -155,8 +145,8 @@
   min-height: 0;
   padding: 0.72rem 0.8rem 0.8rem;
   overflow: hidden;
-  background: var(--home-panel-bg);
-  border: 1px solid var(--home-border-strong);
+  background: var(--color-background);
+  border: 1px solid var(--color-border-strong);
 }
 
 .panelBody {

@@ -34,7 +34,7 @@
   font-size: 11px;
   line-height: 1.2;
   white-space: nowrap;
-  background: #fff;
+  background: var(--chart-surface);
   border: 1px solid var(--chart-border);
 }
 
@@ -79,12 +79,12 @@
 
 .metaTagBarge {
   color: var(--chart-text-secondary);
-  background: #fff;
+  background: var(--chart-surface);
 }
 
 .metaTagPort {
   color: var(--chart-unload);
-  background: #fff;
+  background: var(--chart-surface);
   border-color: color-mix(in srgb, var(--chart-unload) 35%, var(--chart-border));
 }
 
@@ -152,18 +152,18 @@
 
 .badgeType {
   color: var(--chart-text-secondary);
-  background: #fff;
+  background: var(--chart-surface);
 }
 
 .badgeDone {
   color: var(--chart-load);
-  background: #fff;
+  background: var(--chart-surface);
   border-color: color-mix(in srgb, var(--chart-load) 35%, var(--chart-border));
 }
 
 .badgePending {
   color: var(--chart-unload);
-  background: #fff;
+  background: var(--chart-surface);
   border-color: color-mix(in srgb, var(--chart-unload) 35%, var(--chart-border));
 }
 
@@ -187,7 +187,7 @@
   font-size: 11px;
   color: var(--chart-text);
   white-space: nowrap;
-  background: #fff;
+  background: var(--chart-surface);
   border: 1px solid var(--chart-border);
 }
 
