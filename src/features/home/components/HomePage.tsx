@@ -92,15 +92,9 @@ export default function HomePage() {
               />
 
               <section className={styles.ganttInset}>
-                <WidgetHeader title='驳船作业时序甘特' />
+                <WidgetHeader title='' />
                 <MeasuredPanel className={styles.ganttInsetBody}>
-                  {size => (
-                    <BargeCargoGanttView
-                      width={size.width}
-                      height={size.height}
-                      onBarClick={handleGanttSelection}
-                    />
-                  )}
+                  {() => <BargeCargoGanttView onBarClick={handleGanttSelection} />}
                 </MeasuredPanel>
               </section>
             </div>

@@ -117,13 +117,9 @@ export interface GanttDataset {
 }
 
 export interface BargeCargoGanttViewProps {
-  width?: number
-  height?: number
   infoPath?: string
   recordsPath?: string
   containerRecordsPath?: string
-  title?: string
-  subtitle?: string
   /** 点击港口停靠区域或装卸货矩形块时的回调 */
   onBarClick?: (ev: InteractiveEvent) => void
 }

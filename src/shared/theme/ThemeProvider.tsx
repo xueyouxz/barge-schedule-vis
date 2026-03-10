@@ -9,11 +9,12 @@ function getSystemTheme(): ResolvedTheme {
     return 'light'
   }
 
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  // return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  return 'light'
 }
 
 export function ThemeProvider({ children }: PropsWithChildren) {
-  const mode: ThemeMode = 'system'
+  const mode: ThemeMode = 'light'
   const [theme, setTheme] = useState<ResolvedTheme>(() => getSystemTheme())
 
   useEffect(() => {

@@ -12,6 +12,7 @@ import {
 import { ViewStateOverlay } from '@/shared/components/ViewStateOverlay/ViewStateOverlay'
 import { fmtDayLabel, fmtHours } from '@/shared/lib/formatUtils'
 import { buildPortColorMap } from '@/shared/lib/portColors'
+import { useContainerSize } from '@/shared/lib/useContainerSize'
 import { useTheme } from '@/shared/theme'
 import type { ThemeTokens } from '@/shared/theme/theme.types'
 import { BARGE_CARGO_GANTT_CONFIG } from './config'
@@ -27,13 +28,9 @@ import type {
   ShipRow
 } from './types'
 
-const LABEL_W = BARGE_CARGO_GANTT_CONFIG.layout.labelWidth
 const HEAD_H = BARGE_CARGO_GANTT_CONFIG.layout.headerHeight
-const PAD_B = BARGE_CARGO_GANTT_CONFIG.layout.paddingBottom
-const PAD_R = BARGE_CARGO_GANTT_CONFIG.layout.paddingRight
 const BLOCK_H = BARGE_CARGO_GANTT_CONFIG.layout.blockHeight
 const MIN_BLOCK_H = BARGE_CARGO_GANTT_CONFIG.layout.minBlockHeight
-const BLOCK_RADIUS = BARGE_CARGO_GANTT_CONFIG.layout.blockRadius
 const MIN_BLOCK_W = BARGE_CARGO_GANTT_CONFIG.layout.minBlockWidth
 const PORT_BAND_Y_INSET = BARGE_CARGO_GANTT_CONFIG.portBand.yInset
 const PORT_BAND_ACTIVE_OPACITY = BARGE_CARGO_GANTT_CONFIG.portBand.activeOpacity
@@ -128,14 +125,13 @@ function buildShipPortStaySegments(
 }
 
 function createLayout(width: number, height: number | undefined, data: GanttDataset): LayoutParams {
-  const computedWidth = Math.max(width, LABEL_W + PAD_R + 1)
+  const computedWidth = Math.max(width, 1)
   const rowAreaTopY = HEAD_H
-  const fallbackHeight =
-    rowAreaTopY + data.ships.length * BARGE_CARGO_GANTT_CONFIG.layout.rowHeight + PAD_B
-  const computedHeight = height ? Math.max(height, HEAD_H + PAD_B + 1) : fallbackHeight
-  const timelineW = Math.max(1, computedWidth - LABEL_W - PAD_R)
+  const fallbackHeight = rowAreaTopY + data.ships.length * BARGE_CARGO_GANTT_CONFIG.layout.rowHeight
+  const computedHeight = height ? Math.max(height, HEAD_H + 1) : fallbackHeight
+  const timelineW = computedWidth
   const pxPerHour = timelineW / Math.max(data.endHour, 1)
-  const plotH = Math.max(1, computedHeight - rowAreaTopY - PAD_B)
+  const plotH = Math.max(1, computedHeight - rowAreaTopY)
   const rowH = plotH / Math.max(data.ships.length, 1)
   const sailY = rowH / 2
   const loadAmountLabelY = sailY + 4
@@ -166,6 +162,46 @@ function createLayout(width: number, height: number | undefined, data: GanttData
     donutInnerRadius,
     stowInnerOffset: Math.max(1, donutOuterRadius * 0.18),
     stowOuterOffset: Math.max(0.5, donutOuterRadius * 0.08)
+  }
+}
+
+function mixColors(colorA: string, colorB: string, ratio: number) {
+  const left = color(colorA)
+  const right = color(colorB)
+
+  if (!left && !right) return '#000000'
+  if (!left) return right?.formatRgb() ?? '#000000'
+  if (!right) return left.formatRgb()
+
+  const clampedRatio = Math.max(0, Math.min(1, ratio))
+  const inverse = 1 - clampedRatio
+
+  return `rgb(${Math.round(left.r * inverse + right.r * clampedRatio)} ${Math.round(
+    left.g * inverse + right.g * clampedRatio
+  )} ${Math.round(left.b * inverse + right.b * clampedRatio)})`
+}
+
+function applyAlpha(input: string, alpha: number) {
+  const parsed = color(input)
+  if (!parsed) return input
+  parsed.opacity = Math.max(0, Math.min(1, alpha))
+  return parsed.formatRgb()
+}
+
+function getPortBandPaint(
+  baseColor: string,
+  rowIndex: number,
+  palette: ChartPalette
+): { fill: string; stroke: string } {
+  const rowBackground =
+    rowIndex % 2 === 0 ? palette.chart.rowBackgroundEven : palette.chart.rowBackgroundOdd
+  const softened = mixColors(baseColor, palette.chart.surface, 0.62)
+  const fill = mixColors(softened, rowBackground, 0.5)
+  const stroke = mixColors(baseColor, palette.chart.border, 0.35)
+
+  return {
+    fill: applyAlpha(fill, 0.92),
+    stroke: applyAlpha(stroke, 0.78)
   }
 }
 
@@ -230,8 +266,7 @@ function renderTimeAxis(
   chart: ThemeTokens['chart']
 ) {
   const dayHours = BARGE_CARGO_GANTT_CONFIG.axis.dayEveryHours
-  const axisBandTop = BARGE_CARGO_GANTT_CONFIG.axis.bandTop
-  const axisBandHeight = HEAD_H - BARGE_CARGO_GANTT_CONFIG.axis.bandBottomGap
+  const axisBandHeight = HEAD_H
 
   for (let dayStart = 0; dayStart < data.endHour; dayStart += dayHours) {
     const dayWidthHours = Math.min(dayHours, data.endHour - dayStart)
@@ -242,7 +277,7 @@ function renderTimeAxis(
     axisG
       .append('rect')
       .attr('x', x)
-      .attr('y', axisBandTop)
+      .attr('y', 0)
       .attr('width', width)
       .attr('height', axisBandHeight)
       .attr('fill', (dayStart / dayHours) % 2 === 0 ? chart.dayBandEven : chart.dayBandOdd)
@@ -252,7 +287,7 @@ function renderTimeAxis(
     axisG
       .append('text')
       .attr('x', x + BARGE_CARGO_GANTT_CONFIG.axis.dayLabelOffsetX)
-      .attr('y', axisBandTop + axisBandHeight / 2)
+      .attr('y', axisBandHeight / 2)
       .attr('dominant-baseline', 'middle')
       .attr('text-anchor', 'start')
       .attr('font-size', BARGE_CARGO_GANTT_CONFIG.axis.dayLabelFontSize)
@@ -275,7 +310,7 @@ function renderEtdMarks(
       .attr('x1', x)
       .attr('y1', HEAD_H)
       .attr('x2', x)
-      .attr('y2', layout.height - PAD_B)
+      .attr('y2', layout.height)
       .attr('stroke', stroke)
       .attr('stroke-width', 0.8)
       .attr('stroke-dasharray', BARGE_CARGO_GANTT_CONFIG.drawing.etdDashArray)
@@ -364,7 +399,7 @@ function renderShipRow(
 ): Record<string, BlockPosition> {
   const rowY = layout.rowAreaTopY + rowIndex * layout.rowH
   const rowG = svg.append('g').attr('transform', `translate(0, ${rowY})`)
-  const areaG = rowG.append('g').attr('transform', `translate(${LABEL_W}, 0)`)
+  const areaG = rowG.append('g')
   const blockPositions: Record<string, BlockPosition> = {}
 
   // --- 港口驻留背景带 ---
@@ -372,8 +407,8 @@ function renderShipRow(
   buildShipPortStaySegments(ship.events).forEach(segment => {
     const x = segment.startHour * layout.pxPerHour
     const bandWidth = Math.max(1, (segment.endHour - segment.startHour) * layout.pxPerHour)
-    const fill = portColorMap.get(segment.port) ?? palette.portBandFallback
-    const stroke = color(fill)?.darker(0.7).formatHex() ?? palette.chart.border
+    const baseColor = portColorMap.get(segment.port) ?? palette.portBandFallback
+    const { fill, stroke } = getPortBandPaint(baseColor, rowIndex, palette)
     const summaryEvent = createPortSummaryEvent(ship, segment, data)
 
     portBandG
@@ -393,7 +428,7 @@ function renderShipRow(
       .on('click', (mouseEvent: MouseEvent) => {
         mouseEvent.stopPropagation()
         callbacks.hideTip()
-        callbacks.openCargoDetail(summaryEvent, LABEL_W + x + bandWidth / 2, rowY + layout.rowH / 2)
+        callbacks.openCargoDetail(summaryEvent, x + bandWidth / 2, rowY + layout.rowH / 2)
         callbacks.onBarClick?.(summaryEvent)
       })
   })
@@ -592,7 +627,6 @@ function renderShipRow(
         .attr('y', blockY + 1)
         .attr('width', blockWidth)
         .attr('height', blockHeight)
-        .attr('rx', BLOCK_RADIUS)
         .attr('fill', stroke)
         .attr('opacity', 0.06)
 
@@ -602,7 +636,6 @@ function renderShipRow(
         .attr('y', blockY)
         .attr('width', blockWidth)
         .attr('height', blockHeight)
-        .attr('rx', BLOCK_RADIUS)
         .attr('fill', gradient)
         .attr('stroke', stroke)
         .attr('stroke-width', 1.1)
@@ -631,7 +664,7 @@ function renderShipRow(
       }
 
       blockPositions[event.id] = {
-        xMid: LABEL_W + x + blockWidth / 2,
+        xMid: x + blockWidth / 2,
         yTop: rowY + blockY,
         yBottom: rowY + blockY + blockHeight,
         rowTop: rowY,
@@ -704,13 +737,12 @@ function renderTransshipConnections(
 }
 
 export default function BargeCargoGanttView({
-  width = 1300,
-  height,
   infoPath,
   recordsPath,
   containerRecordsPath,
   onBarClick
 }: BargeCargoGanttViewProps) {
+  const [containerRef, containerSize] = useContainerSize<HTMLDivElement>()
   const svgRef = useRef<SVGSVGElement>(null)
   const onBarClickRef = useRef(onBarClick)
   const {
@@ -753,8 +785,12 @@ export default function BargeCargoGanttView({
 
   const layout = useMemo(() => {
     if (!data) return null
-    return createLayout(width, height, data)
-  }, [data, height, width])
+    return createLayout(
+      containerSize.width,
+      containerSize.height > 0 ? containerSize.height : undefined,
+      data
+    )
+  }, [containerSize.height, containerSize.width, data])
 
   const palette = useMemo<ChartPalette>(
     () => ({
@@ -783,7 +819,7 @@ export default function BargeCargoGanttView({
 
     renderDefs(svg.append('defs'), palette)
 
-    const axisG = svg.append('g').attr('transform', `translate(${LABEL_W}, 0)`)
+    const axisG = svg.append('g')
     renderTimeAxis(axisG, data, layout, chart)
     renderEtdMarks(axisG, data, layout, palette.cUnload)
 
@@ -841,10 +877,10 @@ export default function BargeCargoGanttView({
 
   return (
     <div
+      ref={containerRef}
       className={styles.container}
       style={{
-        width: Math.max(width, LABEL_W + PAD_R + 1),
-        height: height ? Math.max(height, 1) : undefined
+        minHeight: layout?.height
       }}
     >
       <ViewStateOverlay
@@ -855,7 +891,7 @@ export default function BargeCargoGanttView({
 
       <div
         className={styles.wrap}
-        style={{ height: layout?.height }}
+        style={{ width: layout?.width, height: layout?.height }}
         onClick={() => setPopupState(null)}
       >
         <svg ref={svgRef} />
