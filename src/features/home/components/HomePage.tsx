@@ -13,12 +13,11 @@ import styles from './HomePage.module.css'
 type ViewPanelProps = {
   className?: string
   title: string
-  extra?: string
   children?: (size: { width: number; height: number }) => ReactNode
   renderStatic?: () => ReactNode
 }
 
-function ViewPanel({ className, title, extra, children, renderStatic }: ViewPanelProps) {
+function ViewPanel({ className, title, children, renderStatic }: ViewPanelProps) {
   const [ref, size] = useContainerSize<HTMLDivElement>()
   const content = renderStatic
     ? renderStatic()
@@ -28,7 +27,7 @@ function ViewPanel({ className, title, extra, children, renderStatic }: ViewPane
 
   return (
     <section className={[styles.panelCard, className].filter(Boolean).join(' ')}>
-      <WidgetHeader title={title} extra={extra} />
+      <WidgetHeader title={title} />
       <div ref={renderStatic ? undefined : ref} className={styles.panelBody}>
         {content}
       </div>
@@ -53,11 +52,7 @@ export default function HomePage() {
     <DashboardShell>
       <section className={styles.page}>
         <section className={styles.dashboardGrid}>
-          <ViewPanel
-            className={styles.cargoPanel}
-            title='主线港口箱量分布'
-            extra={activePort ? `高亮 ${activePort}` : '点击联动'}
-          >
+          <ViewPanel className={styles.cargoPanel} title='主线港口箱量分布'>
             {size => (
               <PortCargoByMainlineView
                 width={size.width}
@@ -71,21 +66,17 @@ export default function HomePage() {
           <ViewPanel
             className={styles.mapPanel}
             title='港口地理位置'
-            extra={activePort ? `选中 ${activePort}` : '地图联动'}
             renderStatic={() => (
               <PortLocationMap
                 compact
+                fillContainer
                 selectedPortCode={activePort}
                 onPortSelect={handlePortSelection}
               />
             )}
           />
 
-          <ViewPanel
-            className={styles.ganttPanel}
-            title='驳船作业时序甘特'
-            extra={ganttError ? '加载失败' : activePort ? `聚焦 ${activePort}` : '全量视图'}
-          >
+          <ViewPanel className={styles.ganttPanel} title='驳船作业时序甘特'>
             {size =>
               ganttError ? (
                 <div>甘特图数据加载失败：{ganttError}</div>

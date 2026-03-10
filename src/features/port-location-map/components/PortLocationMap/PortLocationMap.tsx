@@ -32,6 +32,7 @@ type PortLocation = {
 
 export interface PortLocationMapProps {
   compact?: boolean
+  fillContainer?: boolean
   selectedPortCode?: string
   onPortSelect?: (portCode: string) => void
 }
@@ -52,6 +53,7 @@ function formatCoordinate(value: number) {
 
 export function PortLocationMap({
   compact = false,
+  fillContainer = false,
   selectedPortCode,
   onPortSelect
 }: PortLocationMapProps) {
@@ -114,8 +116,16 @@ export function PortLocationMap({
   }
 
   return (
-    <section className={styles.shell}>
-      <div className={`${styles.stage} ${compact ? styles.stageCompact : ''}`.trim()}>
+    <section className={`${styles.shell} ${fillContainer ? styles.shellFill : ''}`.trim()}>
+      <div
+        className={[
+          styles.stage,
+          compact ? styles.stageCompact : '',
+          fillContainer ? styles.stageFill : ''
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <Map
           ref={mapRef}
           attributionControl={false}

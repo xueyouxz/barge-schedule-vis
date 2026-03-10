@@ -1,23 +1,7 @@
 .header {
   display: flex;
-  gap: 0.42rem;
   align-items: center;
   min-width: 0;
-  padding-bottom: 0.42rem;
-  margin-bottom: 0.45rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--chart-border) 88%, transparent);
-}
-
-.icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.08rem;
-  height: 1.08rem;
-  font-size: 0.64rem;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--chart-unload);
 }
 
 .title {
@@ -29,15 +13,5 @@
   color: var(--color-text-strong);
   text-overflow: ellipsis;
   letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-
-.extra {
-  margin-left: auto;
-  font-family: var(--font-body);
-  font-size: 0.64rem;
-  font-weight: 600;
-  color: var(--color-muted);
-  letter-spacing: 0.01em;
   white-space: nowrap;
 }
