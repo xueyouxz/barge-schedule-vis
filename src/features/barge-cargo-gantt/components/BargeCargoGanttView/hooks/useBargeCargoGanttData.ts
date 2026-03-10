@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import * as d3 from 'd3'
+import { useQuery } from '@tanstack/react-query'
 import type { BargeInfoRaw, BargeRecordRaw, GanttDataset } from '../types'
+import { fetchCsvRows, fetchJson, fetchJsonOptional } from '@/shared/lib/fetchUtils'
 import { buildBargeCargoGanttData } from '../utils/transform'
 
 const DEFAULT_INFO_PATH = '/data/output/2026-01-13 17-20-38/barge_infos.json'
@@ -215,80 +215,53 @@ export function useBargeCargoGanttData(
   recordsPath?: string,
   containerRecordsPath?: string
 ) {
-  const [data, setData] = useState<GanttDataset | null>(null)
-  const [loading, setLoading] = useState(false)
+  const infoUrl = infoPath ?? DEFAULT_INFO_PATH
+  const recUrl = recordsPath ?? DEFAULT_RECORDS_PATH
+  const containerUrl = containerRecordsPath ?? DEFAULT_CONTAINER_RECORDS_PATH
 
-  useEffect(() => {
-    let active = true
+  const query = useQuery({
+    queryKey: ['barge-cargo-gantt-data', infoUrl, recUrl, containerUrl],
+    queryFn: async (): Promise<GanttDataset | null> => {
+      const [infos, rawRecords, containerRows] = await Promise.all([
+        fetchJson<BargeInfoRaw[]>(infoUrl),
+        fetchJsonOptional<Record<string, BargeRecordRaw>>(recUrl),
+        fetchCsvRows<ContainerRecordRow>(containerUrl).catch(() => null)
+      ])
 
-    const load = async () => {
-      setLoading(true)
-      try {
-        const infoUrl = infoPath ?? DEFAULT_INFO_PATH
-        const recUrl = recordsPath ?? DEFAULT_RECORDS_PATH
-        const containerUrl = containerRecordsPath ?? DEFAULT_CONTAINER_RECORDS_PATH
+      const recordMap = new Map<string, BargeRecordRaw>()
+      const bargeIdToVesselVoyage = new Map<number, string>()
 
-        const [infoRes, recordRes, containerRes] = await Promise.all([
-          fetch(infoUrl),
-          fetch(recUrl).catch(() => null),
-          fetch(containerUrl).catch(() => null)
-        ])
-
-        if (!infoRes.ok) {
-          throw new Error(`failed to load barge info: ${infoRes.status}`)
-        }
-
-        const infos = (await infoRes.json()) as BargeInfoRaw[]
-
-        const recordMap = new Map<string, BargeRecordRaw>()
-        // bargeId（barge_records.json 的整数键）→ 'vessel|voyage'
-        // 用于将 container_records.csv 中 route 的 bargeId 映射为实际承运驳船，
-        // 从而将货箱正确关联到甘特图中对应的装卸事件。
-        const bargeIdToVesselVoyage = new Map<number, string>()
-        if (recordRes?.ok) {
-          const raw = (await recordRes.json()) as Record<string, BargeRecordRaw>
-          Object.entries(raw).forEach(([idStr, r]) => {
-            recordMap.set(`${r.vessel}|${r.voyage}`, r)
-            const id = parseInt(idStr, 10)
-            if (!Number.isNaN(id)) {
-              bargeIdToVesselVoyage.set(id, `${r.vessel}|${r.voyage}`)
-            }
-          })
-        }
-
-        const dataset = buildBargeCargoGanttData(infos, recordMap)
-        if (!dataset) {
-          if (active) setData(null)
-          return
-        }
-
-        if (containerRes?.ok) {
-          const csvText = await containerRes.text()
-          const rows = d3.csvParse(csvText) as unknown as ContainerRecordRow[]
-
-          const marks = buildEtdMarksFromContainerRows(rows, dataset)
-          if (marks.length > 0) {
-            dataset.etdMarks = marks
+      if (rawRecords) {
+        Object.entries(rawRecords).forEach(([idStr, record]) => {
+          recordMap.set(`${record.vessel}|${record.voyage}`, record)
+          const id = parseInt(idStr, 10)
+          if (!Number.isNaN(id)) {
+            bargeIdToVesselVoyage.set(id, `${record.vessel}|${record.voyage}`)
           }
+        })
+      }
 
-          enrichEventCargoDetails(dataset, rows, bargeIdToVesselVoyage)
+      const dataset = buildBargeCargoGanttData(infos, recordMap)
+      if (!dataset) {
+        return null
+      }
+
+      if (containerRows && containerRows.length > 0) {
+        const marks = buildEtdMarksFromContainerRows(containerRows, dataset)
+        if (marks.length > 0) {
+          dataset.etdMarks = marks
         }
 
-        if (active) setData(dataset)
-      } catch (error) {
-        console.error('[BargeCargoGanttView] load failed', error)
-        if (active) setData(null)
-      } finally {
-        if (active) setLoading(false)
+        enrichEventCargoDetails(dataset, containerRows, bargeIdToVesselVoyage)
       }
+
+      return dataset
     }
+  })
 
-    load()
-
-    return () => {
-      active = false
-    }
-  }, [infoPath, recordsPath, containerRecordsPath])
-
-  return { data, loading }
+  return {
+    data: query.data ?? null,
+    loading: query.isLoading,
+    error: query.error instanceof Error ? query.error.message : null
+  }
 }

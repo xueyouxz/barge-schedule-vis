@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import * as d3 from 'd3'
+import { useQuery } from '@tanstack/react-query'
 import type { ContainerLoadType, CsvContainerRow, MainlineGroup, PortMainlineRow } from '../types'
+import { fetchCsvRows } from '@/shared/lib/fetchUtils'
 
 const DEFAULT_CSV_FILES = ['/data/output/2026-01-13 17-20-38/container_records.csv']
 
@@ -123,56 +123,23 @@ function buildRowsByOriginPort(allRows: CsvContainerRow[]): PortMainlineRow[] {
 }
 
 export function usePortCargoByMainlineData(csvFiles?: string[]) {
-  const [data, setData] = useState<PortMainlineRow[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const fileList = csvFiles && csvFiles.length > 0 ? csvFiles : DEFAULT_CSV_FILES
+  const containerRecordsPaths = resolveContainerRecordsPaths(fileList)
 
-  useEffect(() => {
-    let active = true
+  const query = useQuery({
+    queryKey: ['port-cargo-by-mainline-data', ...containerRecordsPaths],
+    queryFn: async () => {
+      const allRows = (
+        await Promise.all(containerRecordsPaths.map(path => fetchCsvRows<CsvContainerRow>(path)))
+      ).flat()
 
-    const load = async () => {
-      setLoading(true)
-      setError(null)
-
-      try {
-        const fileList = csvFiles && csvFiles.length > 0 ? csvFiles : DEFAULT_CSV_FILES
-        const containerRecordsPaths = resolveContainerRecordsPaths(fileList)
-        const responses = await Promise.all(containerRecordsPaths.map(path => fetch(path)))
-
-        for (let index = 0; index < responses.length; index += 1) {
-          if (!responses[index].ok) {
-            throw new Error(
-              `加载文件失败: ${containerRecordsPaths[index]} (${responses[index].status})`
-            )
-          }
-        }
-
-        const texts = await Promise.all(responses.map(response => response.text()))
-        const allRows = texts.flatMap(text => d3.csvParse(text) as CsvContainerRow[])
-        const rows = buildRowsByOriginPort(allRows)
-
-        if (active) {
-          setData(rows)
-        }
-      } catch (error) {
-        console.error('[PortCargoByMainlineView] 加载失败', error)
-        if (active) {
-          setData([])
-          setError(error instanceof Error ? error.message : '未知错误')
-        }
-      } finally {
-        if (active) {
-          setLoading(false)
-        }
-      }
+      return buildRowsByOriginPort(allRows)
     }
+  })
 
-    load()
-
-    return () => {
-      active = false
-    }
-  }, [csvFiles])
-
-  return { data, loading, error }
+  return {
+    data: query.data ?? [],
+    loading: query.isLoading,
+    error: query.error instanceof Error ? query.error.message : null
+  }
 }

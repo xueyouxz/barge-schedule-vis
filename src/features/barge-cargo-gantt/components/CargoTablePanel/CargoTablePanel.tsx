@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import * as d3 from 'd3'
+import { useCallback, useMemo } from 'react'
 import { useTheme } from '@/shared/theme'
 import { DataTable, type DataTableColumn } from '@/shared/components/DataTable'
 import type { GanttEvent } from '../BargeCargoGanttView/types'
 import { resolvePortColor } from '@/shared/lib/portColors'
+import { useContainerRecords, type ContainerRecordRow } from './hooks/useContainerRecords'
 import styles from './CargoTablePanel.module.css'
 
 export interface CargoTablePanelProps {
@@ -12,35 +12,7 @@ export interface CargoTablePanelProps {
   onClose?: () => void
 }
 
-type ContainerRecordRow = {
-  箱号?: string
-  船名?: string
-  航次?: string
-  实际离港时间?: string
-  ['进出口（I/O）']?: string
-  ['L/F/E']?: string
-  危类?: string
-  箱主?: string
-  ['内外贸（D/F）']?: string
-  重量?: string
-  TEU?: string
-  起运港码头?: string
-  目的港码头?: string
-  干线船名?: string
-  干线航次?: string
-  干线码头?: string
-  ETD?: string
-  箱就绪时间?: string
-  是否中转?: string
-  route?: string
-  current_leg?: string
-  status?: string
-  location?: string
-}
-
 type LabelValueRow = { label: string; value: string }
-
-const DEFAULT_CONTAINER_RECORDS_PATH = '/data/output/2026-01-13 17-20-38/container_records.csv'
 
 function fmt(value: number | undefined): string {
   if (value === undefined || value === null) return '-'
@@ -159,46 +131,7 @@ export default function CargoTablePanel({
   onClose
 }: CargoTablePanelProps) {
   const { theme } = useTheme()
-  const [rows, setRows] = useState<ContainerRecordRow[]>([])
-  const [loadingRows, setLoadingRows] = useState(false)
-  const [rowsError, setRowsError] = useState<string | null>(null)
-
-  useEffect(() => {
-    let active = true
-
-    const loadRows = async () => {
-      setLoadingRows(true)
-      setRowsError(null)
-
-      try {
-        const url = containerRecordsPath ?? DEFAULT_CONTAINER_RECORDS_PATH
-        const response = await fetch(url)
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
-
-        const text = await response.text()
-        const parsed = d3.csvParse(text) as unknown as ContainerRecordRow[]
-
-        if (active) {
-          setRows(parsed)
-        }
-      } catch (error) {
-        if (active) {
-          setRows([])
-          setRowsError(error instanceof Error ? error.message : '加载失败')
-        }
-      } finally {
-        if (active) {
-          setLoadingRows(false)
-        }
-      }
-    }
-
-    loadRows()
-
-    return () => {
-      active = false
-    }
-  }, [containerRecordsPath])
+  const { rows, loading: loadingRows, error: rowsError } = useContainerRecords(containerRecordsPath)
 
   const filteredRows = useMemo(() => {
     if (!event) return []
