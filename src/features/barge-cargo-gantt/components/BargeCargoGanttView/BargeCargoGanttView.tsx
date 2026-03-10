@@ -442,34 +442,6 @@ function renderShipRow(
     .attr('stroke', palette.chart.border)
     .attr('stroke-width', 0.5)
 
-  const labelG = areaG
-    .append('g')
-    .attr('transform', 'translate(8, 9)')
-    .style('pointer-events', 'none')
-
-  labelG
-    .append('text')
-    .attr('text-anchor', 'start')
-    .attr('y', 0)
-    .attr('dominant-baseline', 'hanging')
-    .attr('font-size', 12)
-    .attr('font-weight', 700)
-    .attr('letter-spacing', '0.01em')
-    .attr('fill', palette.chart.textMuted)
-    .attr('opacity', 0.28)
-    .text(ship.vessel)
-
-  labelG
-    .append('text')
-    .attr('text-anchor', 'start')
-    .attr('y', 14)
-    .attr('dominant-baseline', 'hanging')
-    .attr('font-size', 9)
-    .attr('font-weight', 500)
-    .attr('fill', palette.chart.textMuted)
-    .attr('opacity', 0.24)
-    .text(`${ship.voyage || ship.id} · ${ship.from}`)
-
   const minStart = min(ship.events, event => event.startHour) ?? 0
   const maxEnd = max(ship.events, event => event.endHour) ?? minStart
 
@@ -590,9 +562,18 @@ function renderShipRow(
         .attr('x', 0)
         .attr('y', 0)
         .attr('fill', palette.chart.text)
-        .attr('font-size', Math.max(7, Math.min(12, layout.donutOuterRadius * 0.5)))
         .attr('font-weight', 600)
-        .text(`${Math.round(stowRate * 100)}%`)
+        .call(text => {
+          const valueFontSize = Math.max(9, Math.min(15, layout.donutOuterRadius * 0.66))
+          const percentFontSize = Math.max(6, Math.min(10, layout.donutOuterRadius * 0.38))
+
+          text
+            .append('tspan')
+            .attr('font-size', valueFontSize)
+            .text(`${Math.round(stowRate * 100)}`)
+
+          text.append('tspan').attr('font-size', percentFontSize).attr('dx', 0.5).text('%')
+        })
     })
 
   ship.events
@@ -656,7 +637,7 @@ function renderShipRow(
           .attr('y', isLoading ? layout.loadAmountLabelY : layout.unloadAmountLabelY)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', isLoading ? 'hanging' : 'auto')
-          .attr('font-size', 8)
+          .attr('font-size', 10)
           .attr('font-weight', 600)
           .attr('fill', stroke)
           .attr('opacity', 0.9)
