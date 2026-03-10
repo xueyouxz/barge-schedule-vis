@@ -3,6 +3,7 @@ import { useAppDispatch, useAppSelector } from '@/shared/lib/hooks'
 import { toggleSelectedPort, setSelectedPort } from '@/shared/lib/dashboardFilterSlice'
 import { DashboardShell } from '@/shared/components/DashboardShell/DashboardShell'
 import { WidgetHeader } from '@/shared/components/WidgetHeader/WidgetHeader'
+import { APP_NAME } from '@/shared/constants/app.constants'
 import { useContainerSize } from '@/shared/lib/useContainerSize'
 import { BargeCargoGanttView, type InteractiveEvent } from '@/features/barge-cargo-gantt'
 import { PortCargoByMainlineView } from '@/features/port-cargo-mainline'
@@ -49,6 +50,10 @@ export default function HomePage() {
   return (
     <DashboardShell>
       <section className={styles.page}>
+        <header className={styles.pageTitleBar}>
+          <h1 className={styles.pageTitle}>{APP_NAME}</h1>
+        </header>
+
         <section className={styles.dashboardGrid}>
           <ViewPanel className={styles.cargoPanel} title='主线港口箱量分布'>
             {size => (
