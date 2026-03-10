@@ -74,6 +74,22 @@ export interface GanttEvent {
   }
 }
 
+export interface PortSummaryEvent {
+  id: string
+  shipId: string
+  vessel: string
+  voyage: string
+  port: string
+  type: 'port-summary'
+  startTime: Date
+  endTime: Date
+  startHour: number
+  endHour: number
+  cargoDetail?: GanttEvent['cargoDetail']
+}
+
+export type InteractiveEvent = GanttEvent | PortSummaryEvent
+
 export interface ShipRow {
   id: string
   vessel: string
@@ -109,5 +125,5 @@ export interface BargeCargoGanttViewProps {
   title?: string
   subtitle?: string
   /** 点击港口停靠区域或装卸货矩形块时的回调 */
-  onBarClick?: (ev: GanttEvent) => void
+  onBarClick?: (ev: InteractiveEvent) => void
 }

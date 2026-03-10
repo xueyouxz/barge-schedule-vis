@@ -4,7 +4,7 @@ import { toggleSelectedPort, setSelectedPort } from '@/shared/lib/dashboardFilte
 import { DashboardShell } from '@/shared/components/DashboardShell/DashboardShell'
 import { WidgetHeader } from '@/shared/components/WidgetHeader/WidgetHeader'
 import { useContainerSize } from '@/shared/lib/useContainerSize'
-import { BargeCargoGanttView, type GanttEvent } from '@/features/barge-cargo-gantt'
+import { BargeCargoGanttView, type InteractiveEvent } from '@/features/barge-cargo-gantt'
 import { useBargeCargoGanttData } from '@/features/barge-cargo-gantt/components/BargeCargoGanttView/hooks/useBargeCargoGanttData'
 import { PortCargoByMainlineView } from '@/features/port-cargo-mainline'
 import { PortLocationMap } from '@/features/port-location-map'
@@ -44,7 +44,7 @@ export default function HomePage() {
     dispatch(toggleSelectedPort(portCode))
   }
 
-  const handleGanttSelection = (event: GanttEvent) => {
+  const handleGanttSelection = (event: InteractiveEvent) => {
     dispatch(setSelectedPort(event.port || null))
   }
 

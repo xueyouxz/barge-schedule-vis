@@ -1,13 +1,31 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { arc, color, max, min, select, type DefaultArcObject } from 'd3'
-import { fmtDate, fmtDayLabel, fmtHours } from '@/shared/lib/formatUtils'
-import { buildPortColorMap, resolvePortColor } from '@/shared/lib/portColors'
+import {
+  arc,
+  color,
+  max,
+  min,
+  select,
+  type BaseType,
+  type DefaultArcObject,
+  type Selection
+} from 'd3'
 import { ViewStateOverlay } from '@/shared/components/ViewStateOverlay/ViewStateOverlay'
+import { fmtDayLabel, fmtHours } from '@/shared/lib/formatUtils'
+import { buildPortColorMap } from '@/shared/lib/portColors'
 import { useTheme } from '@/shared/theme'
-import styles from './BargeCargoGanttView.module.css'
+import type { ThemeTokens } from '@/shared/theme/theme.types'
 import { BARGE_CARGO_GANTT_CONFIG } from './config'
+import { CargoDetailPopup, GanttTooltip } from './GanttTooltip'
 import { useBargeCargoGanttData } from './hooks/useBargeCargoGanttData'
-import type { BargeCargoGanttViewProps, GanttEvent } from './types'
+import styles from './BargeCargoGanttView.module.css'
+import type {
+  BargeCargoGanttViewProps,
+  GanttDataset,
+  GanttEvent,
+  InteractiveEvent,
+  PortSummaryEvent,
+  ShipRow
+} from './types'
 
 const LABEL_W = BARGE_CARGO_GANTT_CONFIG.layout.labelWidth
 const HEAD_H = BARGE_CARGO_GANTT_CONFIG.layout.headerHeight
@@ -21,34 +39,668 @@ const PORT_BAND_Y_INSET = BARGE_CARGO_GANTT_CONFIG.portBand.yInset
 const PORT_BAND_ACTIVE_OPACITY = BARGE_CARGO_GANTT_CONFIG.portBand.activeOpacity
 const PORT_BAND_STROKE_WIDTH = BARGE_CARGO_GANTT_CONFIG.portBand.strokeWidth
 
+type AnySelection = Selection<BaseType, unknown, null, undefined>
+type SvgSelection = Selection<SVGSVGElement, unknown, null, undefined>
+type GroupSelection = Selection<SVGGElement, unknown, null, undefined>
+type TooltipState = {
+  event: InteractiveEvent
+  x: number
+  y: number
+} | null
+type PopupState = {
+  event: InteractiveEvent
+  x: number
+  y: number
+} | null
+
+type BlockPosition = {
+  xMid: number
+  yTop: number
+  yBottom: number
+  rowTop: number
+  rowBottom: number
+}
+
+interface LayoutParams {
+  width: number
+  height: number
+  rowAreaTopY: number
+  pxPerHour: number
+  rowH: number
+  sailY: number
+  loadAmountLabelY: number
+  unloadAmountLabelY: number
+  maxBlockH: number
+  minBlockH: number
+  donutOuterRadius: number
+  donutInnerRadius: number
+  stowInnerOffset: number
+  stowOuterOffset: number
+}
+
+interface ChartPalette {
+  chart: ThemeTokens['chart']
+  cLoad: string
+  cUnload: string
+  cTrans: string
+  cSail: string
+  cCargoBig: string
+  cCargoNormal: string
+  cCargoDanger: string
+  portBandFallback: string
+}
+
+interface RenderCallbacks {
+  showTip: (mouseEvent: MouseEvent, event: InteractiveEvent) => void
+  hideTip: () => void
+  openCargoDetail: (event: InteractiveEvent, x: number, y: number) => void
+  onBarClick?: (event: InteractiveEvent) => void
+}
+
 function buildShipPortStaySegments(
   events: GanttEvent[]
 ): Array<{ port: string; startHour: number; endHour: number }> {
   const stayEvents = events
-    .filter(ev => ev.type !== 'sailing')
+    .filter(event => event.type !== 'sailing')
     .slice()
-    .sort((a, b) => a.startHour - b.startHour)
+    .sort((left, right) => left.startHour - right.startHour)
 
   if (!stayEvents.length) return []
 
   const segments: Array<{ port: string; startHour: number; endHour: number }> = []
-  const EPS = 1e-6
+  const epsilon = 1e-6
 
-  stayEvents.forEach(ev => {
+  stayEvents.forEach(event => {
     const last = segments[segments.length - 1]
-    if (last && last.port === ev.port && ev.startHour <= last.endHour + EPS) {
-      last.endHour = Math.max(last.endHour, ev.endHour)
+    if (last && last.port === event.port && event.startHour <= last.endHour + epsilon) {
+      last.endHour = Math.max(last.endHour, event.endHour)
       return
     }
 
     segments.push({
-      port: ev.port,
-      startHour: ev.startHour,
-      endHour: ev.endHour
+      port: event.port,
+      startHour: event.startHour,
+      endHour: event.endHour
     })
   })
 
   return segments
+}
+
+function createLayout(width: number, height: number | undefined, data: GanttDataset): LayoutParams {
+  const computedWidth = Math.max(width, LABEL_W + PAD_R + 1)
+  const rowAreaTopY = HEAD_H
+  const fallbackHeight =
+    rowAreaTopY + data.ships.length * BARGE_CARGO_GANTT_CONFIG.layout.rowHeight + PAD_B
+  const computedHeight = height ? Math.max(height, HEAD_H + PAD_B + 1) : fallbackHeight
+  const timelineW = Math.max(1, computedWidth - LABEL_W - PAD_R)
+  const pxPerHour = timelineW / Math.max(data.endHour, 1)
+  const plotH = Math.max(1, computedHeight - rowAreaTopY - PAD_B)
+  const rowH = plotH / Math.max(data.ships.length, 1)
+  const sailY = rowH / 2
+  const loadAmountLabelY = sailY + 4
+  const unloadAmountLabelY = sailY - 4
+  const maxBlockH = Math.min(rowH * BARGE_CARGO_GANTT_CONFIG.layout.maxBlockHeightRatio, rowH / 2)
+  const minBlockH = Math.max(1, Math.min(MIN_BLOCK_H, maxBlockH))
+  const donutOuterRadius = Math.min(
+    BARGE_CARGO_GANTT_CONFIG.donut.maxOuterRadius,
+    Math.max(
+      BARGE_CARGO_GANTT_CONFIG.donut.minOuterRadius,
+      rowH * BARGE_CARGO_GANTT_CONFIG.donut.outerRadiusRowHeightRatio
+    )
+  )
+  const donutInnerRadius = donutOuterRadius * 0.8
+
+  return {
+    width: computedWidth,
+    height: computedHeight,
+    rowAreaTopY,
+    pxPerHour,
+    rowH,
+    sailY,
+    loadAmountLabelY,
+    unloadAmountLabelY,
+    maxBlockH,
+    minBlockH,
+    donutOuterRadius,
+    donutInnerRadius,
+    stowInnerOffset: Math.max(1, donutOuterRadius * 0.18),
+    stowOuterOffset: Math.max(0.5, donutOuterRadius * 0.08)
+  }
+}
+
+function renderDefs(defs: AnySelection, palette: ChartPalette) {
+  const gLoad = defs
+    .append('linearGradient')
+    .attr('id', 'bcgv-load')
+    .attr('x1', '0%')
+    .attr('y1', '0%')
+    .attr('x2', '0%')
+    .attr('y2', '100%')
+
+  gLoad
+    .append('stop')
+    .attr('offset', '0%')
+    .attr('stop-color', palette.chart.loadGradientTop)
+    .attr('stop-opacity', 0.95)
+  gLoad
+    .append('stop')
+    .attr('offset', '100%')
+    .attr('stop-color', palette.chart.loadGradientBottom)
+    .attr('stop-opacity', 0.85)
+
+  const gUnload = defs
+    .append('linearGradient')
+    .attr('id', 'bcgv-unload')
+    .attr('x1', '0%')
+    .attr('y1', '0%')
+    .attr('x2', '0%')
+    .attr('y2', '100%')
+
+  gUnload
+    .append('stop')
+    .attr('offset', '0%')
+    .attr('stop-color', palette.chart.unloadGradientTop)
+    .attr('stop-opacity', 0.95)
+  gUnload
+    .append('stop')
+    .attr('offset', '100%')
+    .attr('stop-color', palette.chart.unloadGradientBottom)
+    .attr('stop-opacity', 0.85)
+
+  defs
+    .append('marker')
+    .attr('id', 'bcgv-transship-arrow')
+    .attr('viewBox', '0 0 10 10')
+    .attr('refX', 8)
+    .attr('refY', 5)
+    .attr('markerWidth', 5)
+    .attr('markerHeight', 5)
+    .attr('orient', 'auto')
+    .append('path')
+    .attr('d', 'M 0 0 L 10 5 L 0 10 z')
+    .attr('fill', palette.cTrans)
+    .attr('opacity', 0.88)
+}
+
+function renderTimeAxis(
+  axisG: GroupSelection,
+  data: GanttDataset,
+  layout: LayoutParams,
+  chart: ThemeTokens['chart']
+) {
+  const dayHours = BARGE_CARGO_GANTT_CONFIG.axis.dayEveryHours
+  const axisBandTop = BARGE_CARGO_GANTT_CONFIG.axis.bandTop
+  const axisBandHeight = HEAD_H - BARGE_CARGO_GANTT_CONFIG.axis.bandBottomGap
+
+  for (let dayStart = 0; dayStart < data.endHour; dayStart += dayHours) {
+    const dayWidthHours = Math.min(dayHours, data.endHour - dayStart)
+    const x = dayStart * layout.pxPerHour
+    const width = dayWidthHours * layout.pxPerHour
+    const dayDate = new Date(data.startTime.getTime() + dayStart * 60 * 60 * 1000)
+
+    axisG
+      .append('rect')
+      .attr('x', x)
+      .attr('y', axisBandTop)
+      .attr('width', width)
+      .attr('height', axisBandHeight)
+      .attr('fill', (dayStart / dayHours) % 2 === 0 ? chart.dayBandEven : chart.dayBandOdd)
+      .attr('stroke', chart.gridLineColor)
+      .attr('stroke-width', BARGE_CARGO_GANTT_CONFIG.axis.borderWidth)
+
+    axisG
+      .append('text')
+      .attr('x', x + BARGE_CARGO_GANTT_CONFIG.axis.dayLabelOffsetX)
+      .attr('y', axisBandTop + axisBandHeight / 2)
+      .attr('dominant-baseline', 'middle')
+      .attr('text-anchor', 'start')
+      .attr('font-size', BARGE_CARGO_GANTT_CONFIG.axis.dayLabelFontSize)
+      .attr('fill', chart.axisLabelColor)
+      .text(fmtDayLabel(dayDate))
+  }
+}
+
+function renderEtdMarks(
+  axisG: GroupSelection,
+  data: GanttDataset,
+  layout: LayoutParams,
+  stroke: string
+) {
+  data.etdMarks.forEach(mark => {
+    const x = mark.hour * layout.pxPerHour
+
+    axisG
+      .append('line')
+      .attr('x1', x)
+      .attr('y1', HEAD_H)
+      .attr('x2', x)
+      .attr('y2', layout.height - PAD_B)
+      .attr('stroke', stroke)
+      .attr('stroke-width', 0.8)
+      .attr('stroke-dasharray', BARGE_CARGO_GANTT_CONFIG.drawing.etdDashArray)
+      .attr('opacity', 0.45)
+
+    axisG
+      .append('text')
+      .attr('x', x + 4)
+      .attr('y', HEAD_H - 6)
+      .attr('fill', stroke)
+      .attr('font-size', 8)
+      .attr('opacity', 0.6)
+      .text(mark.label)
+  })
+}
+
+function createPortSummaryEvent(
+  ship: ShipRow,
+  segment: { port: string; startHour: number; endHour: number },
+  data: GanttDataset
+): PortSummaryEvent {
+  const portCargoEvents = ship.events.filter(
+    event =>
+      event.port === segment.port &&
+      (event.type === 'loading' || event.type === 'unloading') &&
+      event.startHour >= segment.startHour - 1e-6 &&
+      event.endHour <= segment.endHour + 1e-6
+  )
+  const groupMap = new Map<string, { teu: number; count: number; sampleContainers: string[] }>()
+
+  portCargoEvents.forEach(event => {
+    event.cargoDetail?.groups.forEach(group => {
+      const existing = groupMap.get(group.mainlinePort)
+      if (existing) {
+        existing.teu += group.teu
+        existing.count += group.count
+        return
+      }
+
+      groupMap.set(group.mainlinePort, {
+        teu: group.teu,
+        count: group.count,
+        sampleContainers: [...group.sampleContainers]
+      })
+    })
+  })
+
+  const groups = Array.from(groupMap.entries()).map(([mainlinePort, detail]) => ({
+    mainlinePort,
+    teu: detail.teu,
+    count: detail.count,
+    sampleContainers: detail.sampleContainers
+  }))
+
+  return {
+    id: `port-bg-${ship.id}-${segment.port}-${segment.startHour}`,
+    shipId: ship.id,
+    vessel: ship.vessel,
+    voyage: ship.voyage,
+    port: segment.port,
+    type: 'port-summary',
+    startTime: new Date(data.startTime.getTime() + segment.startHour * 3600000),
+    endTime: new Date(data.startTime.getTime() + segment.endHour * 3600000),
+    startHour: segment.startHour,
+    endHour: segment.endHour,
+    cargoDetail:
+      groups.length > 0
+        ? {
+            totalTeu: groups.reduce((sum, group) => sum + group.teu, 0),
+            totalCount: groups.reduce((sum, group) => sum + group.count, 0),
+            groups
+          }
+        : undefined
+  }
+}
+
+function renderShipRow(
+  svg: SvgSelection,
+  ship: ShipRow,
+  rowIndex: number,
+  data: GanttDataset,
+  layout: LayoutParams,
+  portColorMap: Map<string, string>,
+  palette: ChartPalette,
+  callbacks: RenderCallbacks
+): Record<string, BlockPosition> {
+  const rowY = layout.rowAreaTopY + rowIndex * layout.rowH
+  const rowG = svg.append('g').attr('transform', `translate(0, ${rowY})`)
+  const areaG = rowG.append('g').attr('transform', `translate(${LABEL_W}, 0)`)
+  const blockPositions: Record<string, BlockPosition> = {}
+
+  // --- 港口驻留背景带 ---
+  const portBandG = areaG.append('g')
+  buildShipPortStaySegments(ship.events).forEach(segment => {
+    const x = segment.startHour * layout.pxPerHour
+    const bandWidth = Math.max(1, (segment.endHour - segment.startHour) * layout.pxPerHour)
+    const fill = portColorMap.get(segment.port) ?? palette.portBandFallback
+    const stroke = color(fill)?.darker(0.7).formatHex() ?? palette.chart.border
+    const summaryEvent = createPortSummaryEvent(ship, segment, data)
+
+    portBandG
+      .append('rect')
+      .attr('x', x)
+      .attr('y', PORT_BAND_Y_INSET)
+      .attr('width', bandWidth)
+      .attr('height', Math.max(1, layout.rowH - PORT_BAND_Y_INSET * 2))
+      .attr('fill', fill)
+      .attr('stroke', stroke)
+      .attr('stroke-width', PORT_BAND_STROKE_WIDTH)
+      .attr('stroke-opacity', 0.35)
+      .attr('opacity', PORT_BAND_ACTIVE_OPACITY)
+      .style('cursor', 'pointer')
+      .on('mousemove', (mouseEvent: MouseEvent) => callbacks.showTip(mouseEvent, summaryEvent))
+      .on('mouseleave', callbacks.hideTip)
+      .on('click', (mouseEvent: MouseEvent) => {
+        mouseEvent.stopPropagation()
+        callbacks.hideTip()
+        callbacks.openCargoDetail(summaryEvent, LABEL_W + x + bandWidth / 2, rowY + layout.rowH / 2)
+        callbacks.onBarClick?.(summaryEvent)
+      })
+  })
+
+  rowG
+    .append('line')
+    .attr('x1', 0)
+    .attr('y1', layout.rowH)
+    .attr('x2', layout.width)
+    .attr('y2', layout.rowH)
+    .attr('stroke', palette.chart.border)
+    .attr('stroke-width', 0.5)
+
+  const labelG = areaG
+    .append('g')
+    .attr('transform', 'translate(8, 9)')
+    .style('pointer-events', 'none')
+
+  labelG
+    .append('text')
+    .attr('text-anchor', 'start')
+    .attr('y', 0)
+    .attr('dominant-baseline', 'hanging')
+    .attr('font-size', 12)
+    .attr('font-weight', 700)
+    .attr('letter-spacing', '0.01em')
+    .attr('fill', palette.chart.textMuted)
+    .attr('opacity', 0.28)
+    .text(ship.vessel)
+
+  labelG
+    .append('text')
+    .attr('text-anchor', 'start')
+    .attr('y', 14)
+    .attr('dominant-baseline', 'hanging')
+    .attr('font-size', 9)
+    .attr('font-weight', 500)
+    .attr('fill', palette.chart.textMuted)
+    .attr('opacity', 0.24)
+    .text(`${ship.voyage || ship.id} · ${ship.from}`)
+
+  const minStart = min(ship.events, event => event.startHour) ?? 0
+  const maxEnd = max(ship.events, event => event.endHour) ?? minStart
+
+  areaG
+    .append('line')
+    .attr('x1', minStart * layout.pxPerHour)
+    .attr('y1', layout.sailY)
+    .attr('x2', maxEnd * layout.pxPerHour)
+    .attr('y2', layout.sailY)
+    .attr('stroke', palette.cSail)
+    .attr('stroke-width', 1)
+    .attr('opacity', 0.25)
+
+  const drawNonCargoSegment = (event: GanttEvent, opacity: number) => {
+    areaG
+      .append('line')
+      .attr('x1', event.startHour * layout.pxPerHour)
+      .attr('y1', layout.sailY)
+      .attr('x2', event.endHour * layout.pxPerHour)
+      .attr('y2', layout.sailY)
+      .attr('stroke', palette.cSail)
+      .attr('stroke-width', BARGE_CARGO_GANTT_CONFIG.drawing.nonCargoLineWidth)
+      .attr('stroke-linecap', 'round')
+      .attr('opacity', opacity)
+      .on('mousemove', (mouseEvent: MouseEvent) => callbacks.showTip(mouseEvent, event))
+      .on('mouseleave', callbacks.hideTip)
+  }
+
+  // --- 航行段 + 圆环 ---
+  ship.events
+    .filter(event => event.type === 'sailing')
+    .forEach(event => {
+      const x1 = event.startHour * layout.pxPerHour
+      const x2 = event.endHour * layout.pxPerHour
+      const segmentWidth = x2 - x1
+
+      drawNonCargoSegment(event, 0.55)
+
+      if (
+        !event.cargo ||
+        !event.maxTeu ||
+        segmentWidth <
+          layout.donutOuterRadius * BARGE_CARGO_GANTT_CONFIG.donut.minSegmentWidthFactor
+      ) {
+        return
+      }
+
+      const midX = (x1 + x2) / 2
+      const total = event.cargo.big + event.cargo.normal + event.cargo.danger
+      const onboardTeu = event.teu ?? event.cargo.onboard
+      const stowRate = Math.max(0, Math.min(1, onboardTeu / event.maxTeu))
+      const donutG = areaG.append('g').attr('transform', `translate(${midX}, ${layout.sailY})`)
+
+      donutG
+        .append('circle')
+        .attr('r', layout.donutOuterRadius + 1)
+        .attr(
+          'fill',
+          rowIndex % 2 === 0 ? palette.chart.rowBackgroundEven : palette.chart.rowBackgroundOdd
+        )
+
+      if (total > 0) {
+        const segments = [
+          { val: event.cargo.big, color: palette.cCargoBig },
+          { val: event.cargo.normal, color: palette.cCargoNormal },
+          { val: event.cargo.danger, color: palette.cCargoDanger }
+        ].filter(segment => segment.val > 0)
+
+        let angle = -Math.PI / 2
+        const gap = total > 1 ? BARGE_CARGO_GANTT_CONFIG.donut.segmentGap : 0
+
+        segments.forEach(segment => {
+          const sweep = (segment.val / total) * Math.PI * 2 - gap
+          const arcPath = arc<DefaultArcObject>().cornerRadius(
+            BARGE_CARGO_GANTT_CONFIG.donut.cornerRadius
+          )({
+            innerRadius: layout.donutInnerRadius,
+            outerRadius: layout.donutOuterRadius,
+            startAngle: angle + gap / 2,
+            endAngle: angle + gap / 2 + sweep,
+            padAngle: 0
+          })
+
+          donutG
+            .append('path')
+            .attr('d', arcPath ?? '')
+            .attr('fill', segment.color)
+            .attr('opacity', 0.78)
+          angle += sweep + gap
+        })
+      }
+
+      const stowArc = arc<DefaultArcObject>()({
+        innerRadius: layout.donutInnerRadius - layout.stowInnerOffset,
+        outerRadius: layout.donutInnerRadius - layout.stowOuterOffset,
+        startAngle: -Math.PI / 2,
+        endAngle: -Math.PI / 2 + stowRate * Math.PI * 2,
+        padAngle: 0
+      })
+
+      donutG
+        .append('path')
+        .attr('d', stowArc ?? '')
+        .attr('fill', palette.cSail)
+        .attr('opacity', 0.42)
+      donutG
+        .append('circle')
+        .attr('r', layout.donutInnerRadius - 1)
+        .attr(
+          'fill',
+          rowIndex % 2 === 0 ? palette.chart.rowBackgroundEven : palette.chart.rowBackgroundOdd
+        )
+
+      donutG
+        .append('text')
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'middle')
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('fill', palette.chart.text)
+        .attr('font-size', Math.max(7, Math.min(12, layout.donutOuterRadius * 0.5)))
+        .attr('font-weight', 600)
+        .text(`${Math.round(stowRate * 100)}%`)
+    })
+
+  ship.events
+    .filter(event => event.type === 'waiting' || event.type === 'wrapup')
+    .forEach(event => {
+      drawNonCargoSegment(event, 0.5)
+    })
+
+  // --- 装卸块 ---
+  ship.events
+    .filter(event => event.type === 'loading' || event.type === 'unloading')
+    .forEach(event => {
+      const x = event.startHour * layout.pxPerHour
+      const blockWidth = Math.max((event.endHour - event.startHour) * layout.pxPerHour, MIN_BLOCK_W)
+      const isLoading = event.type === 'loading'
+      const fallbackBlockH = Math.max(layout.minBlockH, Math.min(BLOCK_H, layout.maxBlockH))
+      const scaledBlockH =
+        ship.maxTeu > 0 && typeof event.teu === 'number'
+          ? (event.teu / ship.maxTeu) * layout.maxBlockH
+          : layout.minBlockH
+      const blockHeight =
+        typeof event.teu === 'number' && event.teu >= 0
+          ? Math.max(layout.minBlockH, Math.min(layout.maxBlockH, scaledBlockH))
+          : fallbackBlockH
+      const blockY = isLoading ? layout.sailY - blockHeight : layout.sailY
+      const stroke = isLoading ? palette.cLoad : palette.cUnload
+      const gradient = isLoading ? 'url(#bcgv-load)' : 'url(#bcgv-unload)'
+
+      areaG
+        .append('rect')
+        .attr('x', x + 1)
+        .attr('y', blockY + 1)
+        .attr('width', blockWidth)
+        .attr('height', blockHeight)
+        .attr('rx', BLOCK_RADIUS)
+        .attr('fill', stroke)
+        .attr('opacity', 0.06)
+
+      areaG
+        .append('rect')
+        .attr('x', x)
+        .attr('y', blockY)
+        .attr('width', blockWidth)
+        .attr('height', blockHeight)
+        .attr('rx', BLOCK_RADIUS)
+        .attr('fill', gradient)
+        .attr('stroke', stroke)
+        .attr('stroke-width', 1.1)
+        .attr('stroke-opacity', 0.9)
+        .attr('opacity', 1)
+        .on('mousemove', (mouseEvent: MouseEvent) => callbacks.showTip(mouseEvent, event))
+        .on('mouseleave', callbacks.hideTip)
+        .on('click', (mouseEvent: MouseEvent) => {
+          mouseEvent.stopPropagation()
+          callbacks.hideTip()
+          callbacks.onBarClick?.(event)
+        })
+
+      if (typeof event.teu === 'number') {
+        areaG
+          .append('text')
+          .attr('x', x + blockWidth / 2)
+          .attr('y', isLoading ? layout.loadAmountLabelY : layout.unloadAmountLabelY)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', isLoading ? 'hanging' : 'auto')
+          .attr('font-size', 8)
+          .attr('font-weight', 600)
+          .attr('fill', stroke)
+          .attr('opacity', 0.9)
+          .text(`${event.teu}`)
+      }
+
+      blockPositions[event.id] = {
+        xMid: LABEL_W + x + blockWidth / 2,
+        yTop: rowY + blockY,
+        yBottom: rowY + blockY + blockHeight,
+        rowTop: rowY,
+        rowBottom: rowY + layout.rowH
+      }
+    })
+
+  return blockPositions
+}
+
+function renderTransshipConnections(
+  svg: SvgSelection,
+  data: GanttDataset,
+  blockPositions: Record<string, BlockPosition>,
+  palette: ChartPalette
+) {
+  const eventById = new Map(data.events.map(event => [event.id, event]))
+
+  data.transshipConnections.forEach(connection => {
+    const from = blockPositions[connection.fromEventId]
+    const to = blockPositions[connection.toEventId]
+    if (!from || !to) return
+
+    const fromEvent = eventById.get(connection.fromEventId)
+    const toEvent = eventById.get(connection.toEventId)
+    const x1 = from.xMid
+    let y1 = from.yBottom
+    const x2 = to.xMid
+    let y2 = to.yTop
+
+    if (from.yTop > to.yTop) {
+      y1 = from.yTop
+      y2 = to.yBottom
+    }
+
+    const startRowBoundaryY = y2 >= y1 ? from.rowBottom : from.rowTop
+    const polylinePoints = [
+      `${x1},${y1}`,
+      `${x1},${startRowBoundaryY}`,
+      `${x2},${startRowBoundaryY}`,
+      `${x2},${y2}`
+    ].join(' ')
+    const transferHours =
+      fromEvent && toEvent
+        ? Math.max(0, (toEvent.endTime.getTime() - fromEvent.endTime.getTime()) / (60 * 60 * 1000))
+        : 0
+
+    const connectionG = svg.append('g')
+
+    connectionG
+      .append('polyline')
+      .attr('points', polylinePoints)
+      .attr('fill', 'none')
+      .attr('stroke', palette.cTrans)
+      .attr('stroke-width', 1.2)
+      .attr('stroke-dasharray', BARGE_CARGO_GANTT_CONFIG.drawing.transshipDashArray)
+      .attr('marker-end', 'url(#bcgv-transship-arrow)')
+      .attr('opacity', 0.68)
+
+    connectionG
+      .append('text')
+      .attr('x', (x1 + x2) / 2)
+      .attr('y', startRowBoundaryY - 4)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', 8)
+      .attr('fill', palette.cTrans)
+      .attr('opacity', 1)
+      .text(`${connection.teu} TEU · ${fmtHours(transferHours)}h`)
+  })
 }
 
 export default function BargeCargoGanttView({
@@ -60,25 +712,13 @@ export default function BargeCargoGanttView({
   onBarClick
 }: BargeCargoGanttViewProps) {
   const svgRef = useRef<SVGSVGElement>(null)
-  const tooltipRef = useRef<HTMLDivElement>(null)
   const onBarClickRef = useRef(onBarClick)
   const {
     theme,
     tokens: { chart }
   } = useTheme()
-  const cLoad = chart.load
-  const cUnload = chart.unload
-  const cTrans = chart.transship
-  const cSail = chart.sail
-  const cCargoBig = chart.cargoBig
-  const cCargoNormal = chart.cargoNormal
-  const cCargoDanger = chart.cargoDanger
-  const portBandFallback = chart.portBandFallback
-  const [selectedEvent, setSelectedEvent] = useState<{
-    event: GanttEvent
-    x: number
-    y: number
-  } | null>(null)
+  const [tooltipState, setTooltipState] = useState<TooltipState>(null)
+  const [popupState, setPopupState] = useState<PopupState>(null)
 
   useEffect(() => {
     onBarClickRef.current = onBarClick
@@ -96,12 +736,12 @@ export default function BargeCargoGanttView({
     }
 
     const portSet = new Set<string>()
-    data.events.forEach(ev => {
-      if (ev.type !== 'sailing' && ev.port) {
-        portSet.add(ev.port)
+    data.events.forEach(event => {
+      if (event.type !== 'sailing' && event.port) {
+        portSet.add(event.port)
       }
 
-      ev.cargoDetail?.groups.forEach(group => {
+      event.cargoDetail?.groups.forEach(group => {
         if (group.mainlinePort) {
           portSet.add(group.mainlinePort)
         }
@@ -111,606 +751,93 @@ export default function BargeCargoGanttView({
     return buildPortColorMap(portSet, theme)
   }, [data, theme])
 
-  const chartHeight = useMemo(() => {
-    if (!height) return undefined
-    return Math.max(height, HEAD_H + PAD_B + 1)
-  }, [height])
+  const layout = useMemo(() => {
+    if (!data) return null
+    return createLayout(width, height, data)
+  }, [data, height, width])
+
+  const palette = useMemo<ChartPalette>(
+    () => ({
+      chart,
+      cLoad: chart.load,
+      cUnload: chart.unload,
+      cTrans: chart.transship,
+      cSail: chart.sail,
+      cCargoBig: chart.cargoBig,
+      cCargoNormal: chart.cargoNormal,
+      cCargoDanger: chart.cargoDanger,
+      portBandFallback: chart.portBandFallback
+    }),
+    [chart]
+  )
 
   useEffect(() => {
-    if (!svgRef.current || !data) return
+    if (!svgRef.current || !data || !layout) return
 
-    setSelectedEvent(null)
+    setTooltipState(null)
+    setPopupState(null)
 
     const svg = select(svgRef.current)
     svg.selectAll('*').remove()
+    svg.attr('width', layout.width).attr('height', layout.height)
 
-    const W = Math.max(width, LABEL_W + PAD_R + 1)
-    const rowAreaTopY = HEAD_H
-    const fallbackH =
-      rowAreaTopY + data.ships.length * BARGE_CARGO_GANTT_CONFIG.layout.rowHeight + PAD_B
-    const H = chartHeight ?? fallbackH
-
-    const timelineW = Math.max(1, W - LABEL_W - PAD_R)
-    const pxPerHour = timelineW / Math.max(data.endHour, 1)
-
-    const plotH = Math.max(1, H - rowAreaTopY - PAD_B)
-    const rowH = plotH / Math.max(data.ships.length, 1)
-    const sailY = rowH / 2
-    const loadAmountLabelY = sailY + 4
-    const unloadAmountLabelY = sailY - 4
-    const maxBlockH = Math.min(rowH * BARGE_CARGO_GANTT_CONFIG.layout.maxBlockHeightRatio, rowH / 2)
-    const minBlockH = Math.max(1, Math.min(MIN_BLOCK_H, maxBlockH))
-
-    const donutOuterRadius = Math.min(
-      BARGE_CARGO_GANTT_CONFIG.donut.maxOuterRadius,
-      Math.max(
-        BARGE_CARGO_GANTT_CONFIG.donut.minOuterRadius,
-        rowH * BARGE_CARGO_GANTT_CONFIG.donut.outerRadiusRowHeightRatio
-      )
-    )
-    const donutInnerRadius = donutOuterRadius * 0.8
-    const stowInnerOffset = Math.max(1, donutOuterRadius * 0.18)
-    const stowOuterOffset = Math.max(0.5, donutOuterRadius * 0.08)
-
-    svg.attr('width', W).attr('height', H)
-
-    const defs = svg.append('defs')
-
-    const gLoad = defs
-      .append('linearGradient')
-      .attr('id', 'bcgv-load')
-      .attr('x1', '0%')
-      .attr('y1', '0%')
-      .attr('x2', '0%')
-      .attr('y2', '100%')
-    gLoad
-      .append('stop')
-      .attr('offset', '0%')
-      .attr('stop-color', chart.loadGradientTop)
-      .attr('stop-opacity', 0.95)
-    gLoad
-      .append('stop')
-      .attr('offset', '100%')
-      .attr('stop-color', chart.loadGradientBottom)
-      .attr('stop-opacity', 0.85)
-
-    const gUnload = defs
-      .append('linearGradient')
-      .attr('id', 'bcgv-unload')
-      .attr('x1', '0%')
-      .attr('y1', '0%')
-      .attr('x2', '0%')
-      .attr('y2', '100%')
-    gUnload
-      .append('stop')
-      .attr('offset', '0%')
-      .attr('stop-color', chart.unloadGradientTop)
-      .attr('stop-opacity', 0.95)
-    gUnload
-      .append('stop')
-      .attr('offset', '100%')
-      .attr('stop-color', chart.unloadGradientBottom)
-      .attr('stop-opacity', 0.85)
-
-    defs
-      .append('marker')
-      .attr('id', 'bcgv-transship-arrow')
-      .attr('viewBox', '0 0 10 10')
-      .attr('refX', 8)
-      .attr('refY', 5)
-      .attr('markerWidth', 5)
-      .attr('markerHeight', 5)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M 0 0 L 10 5 L 0 10 z')
-      .attr('fill', cTrans)
-      .attr('opacity', 0.88)
+    renderDefs(svg.append('defs'), palette)
 
     const axisG = svg.append('g').attr('transform', `translate(${LABEL_W}, 0)`)
-    const dayHours = BARGE_CARGO_GANTT_CONFIG.axis.dayEveryHours
-    const axisBandTop = BARGE_CARGO_GANTT_CONFIG.axis.bandTop
-    const axisBandHeight = HEAD_H - BARGE_CARGO_GANTT_CONFIG.axis.bandBottomGap
+    renderTimeAxis(axisG, data, layout, chart)
+    renderEtdMarks(axisG, data, layout, palette.cUnload)
 
-    for (let dayStart = 0; dayStart < data.endHour; dayStart += dayHours) {
-      const dayWidthHours = Math.min(dayHours, data.endHour - dayStart)
-      const x = dayStart * pxPerHour
-      const w = dayWidthHours * pxPerHour
-      const dayDate = new Date(data.startTime.getTime() + dayStart * 60 * 60 * 1000)
-
-      axisG
-        .append('rect')
-        .attr('x', x)
-        .attr('y', axisBandTop)
-        .attr('width', w)
-        .attr('height', axisBandHeight)
-        .attr('fill', (dayStart / dayHours) % 2 === 0 ? chart.dayBandEven : chart.dayBandOdd)
-        .attr('stroke', chart.gridLineColor)
-        .attr('stroke-width', BARGE_CARGO_GANTT_CONFIG.axis.borderWidth)
-
-      axisG
-        .append('text')
-        .attr('x', x + BARGE_CARGO_GANTT_CONFIG.axis.dayLabelOffsetX)
-        .attr('y', axisBandTop + axisBandHeight / 2)
-        .attr('dominant-baseline', 'middle')
-        .attr('text-anchor', 'start')
-        .attr('font-size', BARGE_CARGO_GANTT_CONFIG.axis.dayLabelFontSize)
-        .attr('fill', chart.axisLabelColor)
-        .text(fmtDayLabel(dayDate))
-    }
-
-    data.etdMarks.forEach(mark => {
-      const x = mark.hour * pxPerHour
-      axisG
-        .append('line')
-        .attr('x1', x)
-        .attr('y1', HEAD_H)
-        .attr('x2', x)
-        .attr('y2', H - PAD_B)
-        .attr('stroke', cUnload)
-        .attr('stroke-width', 0.8)
-        .attr('stroke-dasharray', BARGE_CARGO_GANTT_CONFIG.drawing.etdDashArray)
-        .attr('opacity', 0.45)
-
-      axisG
-        .append('text')
-        .attr('x', x + 4)
-        .attr('y', HEAD_H - 6)
-        .attr('fill', cUnload)
-        .attr('font-size', 8)
-        .attr('opacity', 0.6)
-        .text(mark.label)
-    })
-
-    const tooltip = select(tooltipRef.current)
-    const blockPositions: Record<
-      string,
-      { xMid: number; yTop: number; yBottom: number; rowTop: number; rowBottom: number }
-    > = {}
-
-    const showTip = (event: MouseEvent, ev: GanttEvent) => {
-      const loadRate = ev.teu && ev.maxTeu ? `${Math.round((ev.teu / ev.maxTeu) * 100)}%` : '-'
-      const html = [
-        `<strong>${ev.vessel} / ${ev.voyage}</strong>`,
-        `<div>类型：${ev.type}</div>`,
-        `<div>港口：${ev.port}</div>`,
-        `<div>时段：${fmtDate(ev.startTime)} ~ ${fmtDate(ev.endTime)}</div>`,
-        `<div>TEU：${ev.teu ?? '-'}</div>`,
-        `<div>积载率：${loadRate}</div>`
-      ]
-      if (ev.cargo) {
-        html.push(
-          `<div>箱型：大箱 ${ev.cargo.big} / 小箱 ${ev.cargo.normal} / 危险品 ${ev.cargo.danger}</div>`,
-          `<div>船上箱量：${ev.cargo.onboard}</div>`
-        )
-      }
-
-      tooltip
-        .style('opacity', 1)
-        .style('left', `${Math.min(event.clientX + 14, window.innerWidth - 320)}px`)
-        .style('top', `${event.clientY - 12}px`)
-        .html(html.join(''))
+    const showTip = (mouseEvent: MouseEvent, event: InteractiveEvent) => {
+      setTooltipState({
+        event,
+        x: Math.min(mouseEvent.clientX + 14, window.innerWidth - 320),
+        y: mouseEvent.clientY - 12
+      })
     }
 
     const hideTip = () => {
-      tooltip.style('opacity', 0)
+      setTooltipState(null)
     }
 
-    const openCargoDetail = (ev: GanttEvent, x: number, y: number) => {
+    const openCargoDetail = (event: InteractiveEvent, x: number, y: number) => {
       const popupWidth = 280
       const popupHeight = 200
       const margin = 8
-
       const xCandidate = x + margin
       const finalX =
-        xCandidate + popupWidth > W - margin
+        xCandidate + popupWidth > layout.width - margin
           ? Math.max(margin, x - popupWidth - margin)
           : Math.max(margin, xCandidate)
-      const finalY = Math.max(margin, Math.min(y, H - popupHeight - margin))
+      const finalY = Math.max(margin, Math.min(y, layout.height - popupHeight - margin))
 
-      setSelectedEvent({ event: ev, x: finalX, y: finalY })
+      setPopupState({ event, x: finalX, y: finalY })
     }
 
-    const eventById = new Map(data.events.map(ev => [ev.id, ev]))
+    const callbacks: RenderCallbacks = {
+      showTip,
+      hideTip,
+      openCargoDetail,
+      onBarClick: event => onBarClickRef.current?.(event)
+    }
 
-    data.ships.forEach((ship, index) => {
-      const rowY = rowAreaTopY + index * rowH
-      const rowG = svg.append('g').attr('transform', `translate(0, ${rowY})`)
-      const areaG = rowG.append('g').attr('transform', `translate(${LABEL_W}, 0)`)
-      const portStaySegments = buildShipPortStaySegments(ship.events)
-
-      const portBandG = areaG.append('g')
-      portStaySegments.forEach(segment => {
-        const x = segment.startHour * pxPerHour
-        const bandW = Math.max(1, (segment.endHour - segment.startHour) * pxPerHour)
-        const fill = portColorMap.get(segment.port) ?? portBandFallback
-        const stroke = color(fill)?.darker(0.7).formatHex() ?? chart.border
-
-        // 聚合该港口停靠区间内所有装卸事件的货箱明细
-        const portCargoEvents = ship.events.filter(
-          ev =>
-            ev.port === segment.port &&
-            (ev.type === 'loading' || ev.type === 'unloading') &&
-            ev.startHour >= segment.startHour - 1e-6 &&
-            ev.endHour <= segment.endHour + 1e-6
+    const blockPositions = data.ships.reduce<Record<string, BlockPosition>>(
+      (accumulator, ship, rowIndex) => {
+        Object.assign(
+          accumulator,
+          renderShipRow(svg, ship, rowIndex, data, layout, portColorMap, palette, callbacks)
         )
-        const groupMap = new Map<
-          string,
-          { teu: number; count: number; sampleContainers: string[] }
-        >()
-        portCargoEvents.forEach(ev => {
-          ev.cargoDetail?.groups.forEach(g => {
-            const existing = groupMap.get(g.mainlinePort)
-            if (existing) {
-              existing.teu += g.teu
-              existing.count += g.count
-            } else {
-              groupMap.set(g.mainlinePort, {
-                teu: g.teu,
-                count: g.count,
-                sampleContainers: [...g.sampleContainers]
-              })
-            }
-          })
-        })
-        const aggregatedGroups = Array.from(groupMap.entries()).map(([mainlinePort, d]) => ({
-          mainlinePort,
-          teu: d.teu,
-          count: d.count,
-          sampleContainers: d.sampleContainers
-        }))
-        const aggTotalTeu = aggregatedGroups.reduce((s, g) => s + g.teu, 0)
-        const aggTotalCount = aggregatedGroups.reduce((s, g) => s + g.count, 0)
-        const portSyntheticEvent: GanttEvent = {
-          id: `port-bg-${ship.id}-${segment.port}-${segment.startHour}`,
-          shipId: ship.id,
-          vessel: ship.vessel,
-          voyage: ship.voyage,
-          port: segment.port,
-          type: 'loading' as const,
-          startTime: new Date(data.startTime.getTime() + segment.startHour * 3600000),
-          endTime: new Date(data.startTime.getTime() + segment.endHour * 3600000),
-          startHour: segment.startHour,
-          endHour: segment.endHour,
-          cargoDetail:
-            aggregatedGroups.length > 0
-              ? { totalTeu: aggTotalTeu, totalCount: aggTotalCount, groups: aggregatedGroups }
-              : undefined
-        }
+        return accumulator
+      },
+      {}
+    )
 
-        portBandG
-          .append('rect')
-          .attr('x', x)
-          .attr('y', PORT_BAND_Y_INSET)
-          .attr('width', bandW)
-          .attr('height', Math.max(1, rowH - PORT_BAND_Y_INSET * 2))
-          .attr('fill', fill)
-          .attr('stroke', stroke)
-          .attr('stroke-width', PORT_BAND_STROKE_WIDTH)
-          .attr('stroke-opacity', 0.35)
-          .attr('opacity', PORT_BAND_ACTIVE_OPACITY)
-          .style('cursor', 'pointer')
-          .on('mousemove', (e: MouseEvent) => showTip(e, portSyntheticEvent))
-          .on('mouseleave', hideTip)
-          .on('click', (e: MouseEvent) => {
-            e.stopPropagation()
-            hideTip()
-            openCargoDetail(portSyntheticEvent, LABEL_W + x + bandW / 2, rowY + rowH / 2)
-            onBarClickRef.current?.(portSyntheticEvent)
-          })
-      })
-
-      rowG
-        .append('line')
-        .attr('x1', 0)
-        .attr('y1', rowH)
-        .attr('x2', W)
-        .attr('y2', rowH)
-        .attr('stroke', chart.border)
-        .attr('stroke-width', 0.5)
-
-      const labelG = areaG
-        .append('g')
-        .attr('transform', 'translate(8, 9)')
-        .style('pointer-events', 'none')
-      labelG
-        .append('text')
-        .attr('text-anchor', 'start')
-        .attr('y', 0)
-        .attr('dominant-baseline', 'hanging')
-        .attr('font-size', 12)
-        .attr('font-weight', 700)
-        .attr('letter-spacing', '0.01em')
-        .attr('fill', chart.textMuted)
-        .attr('opacity', 0.28)
-        .text(ship.vessel)
-
-      labelG
-        .append('text')
-        .attr('text-anchor', 'start')
-        .attr('y', 14)
-        .attr('dominant-baseline', 'hanging')
-        .attr('font-size', 9)
-        .attr('font-weight', 500)
-        .attr('fill', chart.textMuted)
-        .attr('opacity', 0.24)
-        .text(`${ship.voyage || ship.id} · ${ship.from}`)
-
-      const minStart = min(ship.events, ev => ev.startHour) ?? 0
-      const maxEnd = max(ship.events, ev => ev.endHour) ?? minStart
-
-      areaG
-        .append('line')
-        .attr('x1', minStart * pxPerHour)
-        .attr('y1', sailY)
-        .attr('x2', maxEnd * pxPerHour)
-        .attr('y2', sailY)
-        .attr('stroke', cSail)
-        .attr('stroke-width', 1)
-        .attr('opacity', 0.25)
-
-      const sailingEvents = ship.events.filter(ev => ev.type === 'sailing')
-      const idleEvents = ship.events.filter(ev => ev.type === 'waiting' || ev.type === 'wrapup')
-      const cargoEvents = ship.events.filter(ev => ev.type === 'loading' || ev.type === 'unloading')
-
-      const drawNonCargoSegment = (ev: GanttEvent, opacity: number) => {
-        areaG
-          .append('line')
-          .attr('x1', ev.startHour * pxPerHour)
-          .attr('y1', sailY)
-          .attr('x2', ev.endHour * pxPerHour)
-          .attr('y2', sailY)
-          .attr('stroke', cSail)
-          .attr('stroke-width', BARGE_CARGO_GANTT_CONFIG.drawing.nonCargoLineWidth)
-          .attr('stroke-linecap', 'round')
-          .attr('opacity', opacity)
-          .on('mousemove', (e: MouseEvent) => showTip(e, ev))
-          .on('mouseleave', hideTip)
-      }
-
-      sailingEvents.forEach(ev => {
-        const x1 = ev.startHour * pxPerHour
-        const x2 = ev.endHour * pxPerHour
-        const segW = x2 - x1
-
-        drawNonCargoSegment(ev, 0.55)
-
-        if (
-          ev.cargo &&
-          ev.maxTeu &&
-          segW >= donutOuterRadius * BARGE_CARGO_GANTT_CONFIG.donut.minSegmentWidthFactor
-        ) {
-          const midX = (x1 + x2) / 2
-          const total = ev.cargo.big + ev.cargo.normal + ev.cargo.danger
-          const onboardTeu = ev.teu ?? ev.cargo.onboard
-          const stowRate = Math.max(0, Math.min(1, onboardTeu / ev.maxTeu))
-
-          const donutG = areaG
-            .append('g')
-            .attr('transform', `translate(${midX}, ${sailY})`)
-            .attr('opacity', 1)
-
-          donutG
-            .append('circle')
-            .attr('r', donutOuterRadius + 1)
-            .attr('fill', index % 2 === 0 ? chart.rowBackgroundEven : chart.rowBackgroundOdd)
-
-          if (total > 0) {
-            const segments = [
-              { val: ev.cargo.big, color: cCargoBig },
-              { val: ev.cargo.normal, color: cCargoNormal },
-              { val: ev.cargo.danger, color: cCargoDanger }
-            ].filter(s => s.val > 0)
-
-            let angle = -Math.PI / 2
-            const gap = total > 1 ? BARGE_CARGO_GANTT_CONFIG.donut.segmentGap : 0
-
-            segments.forEach(seg => {
-              const sweep = (seg.val / total) * Math.PI * 2 - gap
-              const arcPath = arc<DefaultArcObject>().cornerRadius(
-                BARGE_CARGO_GANTT_CONFIG.donut.cornerRadius
-              )({
-                innerRadius: donutInnerRadius,
-                outerRadius: donutOuterRadius,
-                startAngle: angle + gap / 2,
-                endAngle: angle + gap / 2 + sweep,
-                padAngle: 0
-              })
-
-              donutG
-                .append('path')
-                .attr('d', arcPath ?? '')
-                .attr('fill', seg.color)
-                .attr('opacity', 0.78)
-
-              angle += sweep + gap
-            })
-          }
-
-          const stowArc = arc<DefaultArcObject>()({
-            innerRadius: donutInnerRadius - stowInnerOffset,
-            outerRadius: donutInnerRadius - stowOuterOffset,
-            startAngle: -Math.PI / 2,
-            endAngle: -Math.PI / 2 + stowRate * Math.PI * 2,
-            padAngle: 0
-          })
-
-          donutG
-            .append('path')
-            .attr('d', stowArc ?? '')
-            .attr('fill', cSail)
-            .attr('opacity', 0.42)
-          donutG
-            .append('circle')
-            .attr('r', donutInnerRadius - 1)
-            .attr('fill', index % 2 === 0 ? chart.rowBackgroundEven : chart.rowBackgroundOdd)
-
-          donutG
-            .append('text')
-            .attr('text-anchor', 'middle')
-            .attr('dominant-baseline', 'middle')
-            .attr('x', 0)
-            .attr('y', 0)
-            .attr('fill', chart.text)
-            .attr('font-size', Math.max(7, Math.min(12, donutOuterRadius * 0.5)))
-            .attr('font-weight', 600)
-            .text(`${Math.round(stowRate * 100)}%`)
-        }
-      })
-
-      idleEvents.forEach(ev => {
-        drawNonCargoSegment(ev, 0.5)
-      })
-
-      cargoEvents.forEach(ev => {
-        const x = ev.startHour * pxPerHour
-        const bw = Math.max((ev.endHour - ev.startHour) * pxPerHour, MIN_BLOCK_W)
-        const isLoading = ev.type === 'loading'
-        const fallbackBlockH = Math.max(minBlockH, Math.min(BLOCK_H, maxBlockH))
-        const scaledBlockH =
-          ship.maxTeu > 0 && typeof ev.teu === 'number'
-            ? (ev.teu / ship.maxTeu) * maxBlockH
-            : minBlockH
-        const blockH =
-          typeof ev.teu === 'number' && ev.teu >= 0
-            ? Math.max(minBlockH, Math.min(maxBlockH, scaledBlockH))
-            : fallbackBlockH
-        const blockY = isLoading ? sailY - blockH : sailY
-        const stroke = isLoading ? cLoad : cUnload
-        const grad = isLoading ? 'url(#bcgv-load)' : 'url(#bcgv-unload)'
-
-        areaG
-          .append('rect')
-          .attr('x', x + 1)
-          .attr('y', blockY + 1)
-          .attr('width', bw)
-          .attr('height', blockH)
-          .attr('rx', BLOCK_RADIUS)
-          .attr('fill', stroke)
-          .attr('opacity', 0.06)
-
-        areaG
-          .append('rect')
-          .attr('x', x)
-          .attr('y', blockY)
-          .attr('width', bw)
-          .attr('height', blockH)
-          .attr('rx', BLOCK_RADIUS)
-          .attr('fill', grad)
-          .attr('stroke', stroke)
-          .attr('stroke-width', 1.1)
-          .attr('stroke-opacity', 0.9)
-          .attr('opacity', 1)
-          .on('mousemove', (e: MouseEvent) => showTip(e, ev))
-          .on('mouseleave', hideTip)
-          .on('click', (e: MouseEvent) => {
-            e.stopPropagation()
-            hideTip()
-            onBarClickRef.current?.(ev)
-          })
-
-        if (typeof ev.teu === 'number') {
-          areaG
-            .append('text')
-            .attr('x', x + bw / 2)
-            .attr('y', isLoading ? loadAmountLabelY : unloadAmountLabelY)
-            .attr('text-anchor', 'middle')
-            .attr('dominant-baseline', isLoading ? 'hanging' : 'auto')
-            .attr('font-size', 8)
-            .attr('font-weight', 600)
-            .attr('fill', stroke)
-            .attr('opacity', 0.9)
-            .text(`${ev.teu}`)
-        }
-
-        blockPositions[ev.id] = {
-          xMid: LABEL_W + x + bw / 2,
-          yTop: rowY + blockY,
-          yBottom: rowY + blockY + blockH,
-          rowTop: rowY,
-          rowBottom: rowY + rowH
-        }
-      })
-    })
-
-    data.transshipConnections.forEach(tc => {
-      const from = blockPositions[tc.fromEventId]
-      const to = blockPositions[tc.toEventId]
-      if (!from || !to) return
-
-      const fromEvent = eventById.get(tc.fromEventId)
-      const toEvent = eventById.get(tc.toEventId)
-
-      const x1 = from.xMid
-      let y1 = from.yBottom
-      const x2 = to.xMid
-      let y2 = to.yTop
-
-      if (from.yTop > to.yTop) {
-        y1 = from.yTop
-        y2 = to.yBottom
-      }
-
-      const startRowBoundaryY = y2 >= y1 ? from.rowBottom : from.rowTop
-      const polylinePoints = [
-        `${x1},${y1}`,
-        `${x1},${startRowBoundaryY}`,
-        `${x2},${startRowBoundaryY}`,
-        `${x2},${y2}`
-      ].join(' ')
-
-      const transferHours =
-        fromEvent && toEvent
-          ? Math.max(
-              0,
-              (toEvent.endTime.getTime() - fromEvent.endTime.getTime()) / (60 * 60 * 1000)
-            )
-          : 0
-
-      const connG = svg.append('g')
-      connG
-        .append('polyline')
-        .attr('points', polylinePoints)
-        .attr('fill', 'none')
-        .attr('stroke', cTrans)
-        .attr('stroke-width', 1.2)
-        .attr('stroke-dasharray', BARGE_CARGO_GANTT_CONFIG.drawing.transshipDashArray)
-        .attr('marker-end', 'url(#bcgv-transship-arrow)')
-        .attr('opacity', 0.68)
-
-      connG
-        .append('text')
-        .attr('x', (x1 + x2) / 2)
-        .attr('y', startRowBoundaryY - 4)
-        .attr('text-anchor', 'middle')
-        .attr('font-size', 8)
-        .attr('fill', cTrans)
-        .attr('opacity', 1)
-        .text(`${tc.teu} TEU · ${fmtHours(transferHours)}h`)
-    })
+    renderTransshipConnections(svg, data, blockPositions, palette)
 
     svg.on('click', () => {
-      setSelectedEvent(null)
+      setPopupState(null)
       hideTip()
     })
-  }, [
-    data,
-    width,
-    chartHeight,
-    portColorMap,
-    chart,
-    cLoad,
-    cUnload,
-    cTrans,
-    cSail,
-    cCargoBig,
-    cCargoNormal,
-    cCargoDanger,
-    portBandFallback,
-    theme
-  ])
-
-  const selectedGroups = selectedEvent?.event.cargoDetail?.groups ?? []
-  const maxGroupCount = selectedGroups.reduce((m, g) => Math.max(m, g.count), 0)
+  }, [chart, data, layout, palette, portColorMap])
 
   return (
     <div
@@ -728,64 +855,24 @@ export default function BargeCargoGanttView({
 
       <div
         className={styles.wrap}
-        style={{ height: chartHeight }}
-        onClick={() => setSelectedEvent(null)}
+        style={{ height: layout?.height }}
+        onClick={() => setPopupState(null)}
       >
         <svg ref={svgRef} />
-        {selectedEvent && (
-          <div
-            className={styles.cargoPopup}
-            style={{ left: selectedEvent.x, top: selectedEvent.y }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className={styles.cargoPopupHeader}>
-              <div className={styles.cargoPopupPortName}>{selectedEvent.event.port}</div>
-              <button
-                className={styles.cargoPopupClose}
-                onClick={() => setSelectedEvent(null)}
-                title='关闭'
-              >
-                ×
-              </button>
-            </div>
-
-            <div className={styles.cargoPopupMeta}>
-              <span>{selectedEvent.event.vessel}</span>
-              <span>{selectedEvent.event.voyage}</span>
-            </div>
-
-            {selectedGroups.length === 0 ? (
-              <div className={styles.cargoPopupEmpty}>暂无装货明细数据</div>
-            ) : (
-              <div className={styles.portBarChart}>
-                {selectedGroups.map(group => {
-                  const pct = maxGroupCount > 0 ? (group.count / maxGroupCount) * 100 : 0
-                  const color =
-                    portColorMap.get(group.mainlinePort) ??
-                    resolvePortColor(group.mainlinePort, theme)
-                  return (
-                    <div key={group.mainlinePort} className={styles.portBarChartRow}>
-                      <div className={styles.portBarChartTrack}>
-                        <div
-                          className={styles.portBarChartFill}
-                          style={{ width: `${pct}%`, background: color }}
-                          title={`${group.mainlinePort}：${group.count} 箱 · ${fmtHours(group.teu)} TEU`}
-                        >
-                          <span className={styles.portBarChartBarLabel}>{group.mainlinePort}</span>
-                        </div>
-                      </div>
-                      <div className={styles.portBarChartValue}>
-                        {group.count} 箱/ {fmtHours(group.teu)} TEU
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        )}
+        <CargoDetailPopup
+          event={popupState?.event ?? null}
+          position={{ x: popupState?.x ?? 0, y: popupState?.y ?? 0 }}
+          portColorMap={portColorMap}
+          theme={theme}
+          onClose={() => setPopupState(null)}
+        />
       </div>
-      <div ref={tooltipRef} className={styles.tooltip} />
+
+      <GanttTooltip
+        event={tooltipState?.event ?? null}
+        position={{ x: tooltipState?.x ?? 0, y: tooltipState?.y ?? 0 }}
+        visible={tooltipState !== null}
+      />
     </div>
   )
 }
