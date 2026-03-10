@@ -5,20 +5,6 @@
   border: 1px solid var(--chart-border);
 }
 
-.state,
-.stateError {
-  padding: 18px;
-  font-size: 12px;
-}
-
-.state {
-  color: var(--chart-text-muted);
-}
-
-.stateError {
-  color: var(--chart-load);
-}
-
 .svg {
   display: block;
 }

@@ -1,0 +1,26 @@
+.root {
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.inline {
+  min-height: 72px;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: color-mix(in srgb, var(--color-background) 88%, transparent);
+}
+
+.muted {
+  color: var(--chart-text-muted);
+}
+
+.error {
+  color: var(--chart-load);
+}

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { arc, color, max, min, select, type DefaultArcObject } from 'd3'
 import { fmtDate, fmtDayLabel, fmtHours } from '@/shared/lib/formatUtils'
 import { buildPortColorMap, resolvePortColor } from '@/shared/lib/portColors'
+import { ViewStateOverlay } from '@/shared/components/ViewStateOverlay/ViewStateOverlay'
 import { useTheme } from '@/shared/theme'
 import styles from './BargeCargoGanttView.module.css'
 import { BARGE_CARGO_GANTT_CONFIG } from './config'
@@ -776,8 +777,11 @@ export default function BargeCargoGanttView({
         height: height ? Math.max(height, 1) : undefined
       }}
     >
-      {loading && <div className={styles.loading}>正在加载仿真数据...</div>}
-      {error && <div className={styles.error}>甘特图数据加载失败：{error}</div>}
+      <ViewStateOverlay
+        loading={loading}
+        error={error ? `甘特图数据加载失败：${error}` : null}
+        loadingText='正在加载仿真数据...'
+      />
 
       <div
         className={styles.wrap}

@@ -10,6 +10,7 @@ import Map, {
 } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { DATA_PATHS } from '@/shared/constants/scenarioConfig'
+import { ViewStateOverlay } from '@/shared/components/ViewStateOverlay/ViewStateOverlay'
 import { useTheme } from '@/shared/theme'
 import { fetchJson } from '@/shared/lib/fetchUtils'
 import { buildMapStyle, MAP_DEFAULTS } from './mapStyle.config'
@@ -184,10 +185,12 @@ export function PortLocationMap({
           ) : null}
         </Map>
 
-        {portsQuery.isLoading ? <div className={styles.statusMask}>正在加载港口地图...</div> : null}
-        {portsQuery.error instanceof Error ? (
-          <div className={styles.statusMask}>{portsQuery.error.message}</div>
-        ) : null}
+        <ViewStateOverlay
+          overlay
+          loading={portsQuery.isLoading}
+          error={portsQuery.error instanceof Error ? portsQuery.error.message : null}
+          loadingText='正在加载港口地图...'
+        />
       </div>
     </section>
   )

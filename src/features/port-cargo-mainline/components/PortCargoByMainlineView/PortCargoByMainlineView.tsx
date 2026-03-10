@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { color as d3Color, scaleBand, scaleLinear } from 'd3'
+import { ViewStateOverlay } from '@/shared/components/ViewStateOverlay/ViewStateOverlay'
 import { useTheme } from '@/shared/theme'
 import { resolvePortColor } from '@/shared/lib/portColors'
 import { usePortCargoByMainlineData } from './usePortCargoByMainlineData'
@@ -129,16 +130,14 @@ export default function PortCargoByMainlineView({
     return { maxCount }
   }, [data])
 
-  if (loading) {
-    return <div className={styles.state}>加载中...</div>
-  }
-
-  if (error) {
-    return <div className={styles.stateError}>加载失败：{error}</div>
-  }
-
-  if (data.length === 0) {
-    return <div className={styles.state}>暂无数据</div>
+  if (loading || error || data.length === 0) {
+    return (
+      <ViewStateOverlay
+        loading={loading}
+        error={error ? `加载失败：${error}` : null}
+        empty={data.length === 0}
+      />
+    )
   }
 
   const chartHeight = Math.max(1, height - VIEW_MARGIN.top - VIEW_MARGIN.bottom)

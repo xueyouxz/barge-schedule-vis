@@ -43,19 +43,6 @@
   min-height: 500px;
 }
 
-.statusMask {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  display: grid;
-  place-items: center;
-  padding: 1.5rem;
-  font-size: 12px;
-  color: var(--chart-text);
-  text-align: center;
-  background: color-mix(in srgb, var(--color-background) 88%, transparent);
-}
-
 .marker {
   display: inline-flex;
   gap: 0.35rem;
