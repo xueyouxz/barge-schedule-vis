@@ -1,11 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import type { BargeInfoRaw, BargeRecordRaw, GanttDataset } from '../types'
+import { DATA_PATHS } from '@/shared/constants/scenarioConfig'
 import { fetchCsvRows, fetchJson, fetchJsonOptional } from '@/shared/lib/fetchUtils'
 import { buildBargeCargoGanttData } from '../utils/transform'
-
-const DEFAULT_INFO_PATH = '/data/output/2026-01-13 17-20-38/barge_infos.json'
-const DEFAULT_RECORDS_PATH = '/data/output/2026-01-13 17-20-38/barge_records.json'
-const DEFAULT_CONTAINER_RECORDS_PATH = '/data/output/2026-01-13 17-20-38/container_records.csv'
 
 type ContainerRecordRow = {
   箱号?: string
@@ -215,9 +212,9 @@ export function useBargeCargoGanttData(
   recordsPath?: string,
   containerRecordsPath?: string
 ) {
-  const infoUrl = infoPath ?? DEFAULT_INFO_PATH
-  const recUrl = recordsPath ?? DEFAULT_RECORDS_PATH
-  const containerUrl = containerRecordsPath ?? DEFAULT_CONTAINER_RECORDS_PATH
+  const infoUrl = infoPath ?? DATA_PATHS.bargeInfos
+  const recUrl = recordsPath ?? DATA_PATHS.bargeRecords
+  const containerUrl = containerRecordsPath ?? DATA_PATHS.containerRecords
 
   const query = useQuery({
     queryKey: ['barge-cargo-gantt-data', infoUrl, recUrl, containerUrl],

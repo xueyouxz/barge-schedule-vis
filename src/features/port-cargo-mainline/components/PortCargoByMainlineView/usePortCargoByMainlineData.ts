@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import type { ContainerLoadType, CsvContainerRow, MainlineGroup, PortMainlineRow } from '../types'
+import { DATA_PATHS } from '@/shared/constants/scenarioConfig'
 import { fetchCsvRows } from '@/shared/lib/fetchUtils'
-
-const DEFAULT_CSV_FILES = ['/data/output/2026-01-13 17-20-38/container_records.csv']
 
 function resolveContainerRecordsPaths(fileList: string[]): string[] {
   const resolved = new Set<string>()
@@ -30,7 +29,7 @@ function resolveContainerRecordsPaths(fileList: string[]): string[] {
   })
 
   if (resolved.size === 0) {
-    resolved.add(DEFAULT_CSV_FILES[0])
+    resolved.add(DATA_PATHS.containerRecords)
   }
 
   return Array.from(resolved)
@@ -123,7 +122,7 @@ function buildRowsByOriginPort(allRows: CsvContainerRow[]): PortMainlineRow[] {
 }
 
 export function usePortCargoByMainlineData(csvFiles?: string[]) {
-  const fileList = csvFiles && csvFiles.length > 0 ? csvFiles : DEFAULT_CSV_FILES
+  const fileList = csvFiles && csvFiles.length > 0 ? csvFiles : [DATA_PATHS.containerRecords]
   const containerRecordsPaths = resolveContainerRecordsPaths(fileList)
 
   const query = useQuery({
