@@ -1,0 +1,76 @@
+.legend {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.section {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.label {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-text-strong);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.chip {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+  padding: 3px 8px 3px 6px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--color-text);
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, var(--color-surface));
+  border-radius: 999px;
+}
+
+.swatch {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border: 1px solid color-mix(in srgb, var(--color-background) 45%, var(--color-border));
+  border-radius: 999px;
+}
+
+.cargoSwatch {
+  border-radius: 3px;
+}
+
+.chipText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (width <= 1280px) {
+  .legend {
+    gap: 8px;
+  }
+
+  .chip {
+    padding-right: 6px;
+    font-size: 10px;
+  }
+}

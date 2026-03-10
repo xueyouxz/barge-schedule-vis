@@ -232,7 +232,7 @@ export default function PortCargoByMainlineView({
                     blockWidth,
                     blockHeight
                   )
-                  const blockColor = resolvePortColor(block.route, theme)
+                  const blockColor = resolvePortColor(block.mainlinePort, theme)
                   const borderColor = d3Color(blockColor)?.darker(0.6).formatHex() ?? '#374151'
 
                   return (

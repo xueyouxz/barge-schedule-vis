@@ -5,8 +5,7 @@ import type {
   GanttDataset,
   GanttEvent,
   GanttEventType,
-  ShipRow,
-  TransshipConnection
+  ShipRow
 } from '../types'
 
 const HOUR = 60 * 60 * 1000
@@ -154,8 +153,6 @@ export function buildBargeCargoGanttData(
     return aStart - bStart
   })
 
-  const transshipConnections = buildTransshipConnections(ships, recordMap)
-
   const endHourRaw = (endTimeRaw.getTime() - startTime.getTime()) / HOUR
   const endHour = Math.ceil(endHourRaw + 6)
 
@@ -170,65 +167,7 @@ export function buildBargeCargoGanttData(
     endHour,
     ships,
     events: allEvents,
-    transshipConnections,
+    transshipConnections: [],
     etdMarks
   }
-}
-
-function buildTransshipConnections(
-  ships: ShipRow[],
-  recordMap: Map<string, BargeRecordRaw>
-): TransshipConnection[] {
-  const unloadCandidates = ships.flatMap(s => {
-    const key = `${s.vessel}|${s.voyage}`
-    const rec = recordMap.get(key)
-
-    return s.events
-      .filter(ev => ev.type === 'unloading')
-      .map(ev => {
-        const transshipTeu = rec?.unload?.[ev.port]?.num_transship ?? 0
-        return { ship: s, event: ev, teu: transshipTeu }
-      })
-      .filter(x => x.teu > 0)
-  })
-
-  const loadingTargets = ships.flatMap(s =>
-    s.events
-      .filter(ev => ev.type === 'loading' && (ev.teu ?? 0) > 0)
-      .map(ev => ({ ship: s, event: ev, remain: ev.teu ?? 0 }))
-  )
-
-  const connections: TransshipConnection[] = []
-
-  unloadCandidates.forEach(src => {
-    let remain = src.teu
-
-    const matchedTargets = loadingTargets
-      .filter(
-        target =>
-          target.event.port === src.event.port &&
-          target.ship.id !== src.ship.id &&
-          // 接驳船的装货结束时间必须晚于中转船的卸货完成时间（货物才来得及装上）
-          target.event.endTime.getTime() >= src.event.endTime.getTime() &&
-          // 且不超过卸货完成后 36 小时（避免跨天的无效匹配）
-          target.event.endTime.getTime() <= src.event.endTime.getTime() + 36 * HOUR
-      )
-      .sort((a, b) => a.event.endTime.getTime() - b.event.endTime.getTime())
-
-    matchedTargets.forEach(target => {
-      if (remain <= 0 || target.remain <= 0) return
-      const flow = Math.min(remain, target.remain)
-      target.remain -= flow
-      remain -= flow
-
-      connections.push({
-        id: `TC-${src.event.id}-${target.event.id}`,
-        fromEventId: src.event.id,
-        toEventId: target.event.id,
-        teu: flow
-      })
-    })
-  })
-
-  return connections
 }

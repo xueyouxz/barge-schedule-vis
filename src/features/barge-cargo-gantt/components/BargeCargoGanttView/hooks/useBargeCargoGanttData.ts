@@ -4,6 +4,7 @@ import { fetchCsvRows, fetchJson, fetchJsonOptional } from '@/shared/lib/fetchUt
 import { useActiveSceneDataPaths } from '@/shared/hooks/useActiveSceneDataPaths'
 import {
   buildEtdMarksFromContainerRows,
+  buildTransshipConnectionsFromContainerRows,
   enrichEventCargoDetails,
   type ContainerRecordRow
 } from '../utils/ganttDataEnrich'
@@ -53,6 +54,11 @@ export function useBargeCargoGanttData(
           dataset.etdMarks = marks
         }
 
+        dataset.transshipConnections = buildTransshipConnectionsFromContainerRows(
+          dataset,
+          containerRows,
+          bargeIdToVesselVoyage
+        )
         enrichEventCargoDetails(dataset, containerRows, bargeIdToVesselVoyage)
       }
 

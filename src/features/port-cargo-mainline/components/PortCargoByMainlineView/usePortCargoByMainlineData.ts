@@ -53,6 +53,18 @@ function normalizeRouteLabel(route?: string): string {
   return raw
 }
 
+function resolveMainlinePort(route?: string): string {
+  const raw = (route || '').trim()
+  if (!raw) return '未指定港口'
+
+  const chain = extractRouteChain(route)
+  if (chain.length > 0) {
+    return chain[chain.length - 1] ?? raw
+  }
+
+  return raw
+}
+
 function toPortMainlineRow(port: string, rows: CsvContainerRow[]): PortMainlineRow {
   const routeMap = new Map<
     string,
@@ -75,6 +87,7 @@ function toPortMainlineRow(port: string, rows: CsvContainerRow[]): PortMainlineR
     .map(([route, data]) => ({
       route,
       routeLabel: normalizeRouteLabel(route),
+      mainlinePort: resolveMainlinePort(route),
       teu: data.teu,
       count: data.count,
       containers: data.containers

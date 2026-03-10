@@ -21,6 +21,7 @@
 .pageTitleBar {
   display: flex;
   grid-area: title;
+  gap: 16px;
   align-items: center;
   min-width: 0;
   padding: 0 12px;
@@ -30,6 +31,7 @@
 }
 
 .pageTitle {
+  flex: 0 0 auto;
   margin: 0;
   overflow: hidden;
   font-size: 22px;

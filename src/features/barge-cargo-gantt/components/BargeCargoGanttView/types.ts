@@ -104,6 +104,7 @@ export interface TransshipConnection {
   fromEventId: string
   toEventId: string
   teu: number
+  count: number
 }
 
 export interface GanttDataset {

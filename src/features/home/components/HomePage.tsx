@@ -3,6 +3,7 @@ import { useAppDispatch, useAppSelector } from '@/shared/lib/hooks'
 import { toggleSelectedPort, setSelectedPort } from '@/shared/lib/dashboardFilterSlice'
 import { DashboardShell } from '@/shared/components/DashboardShell/DashboardShell'
 import { SettingsPanel } from '@/shared/components/SettingsPanel/SettingsPanel'
+import { GlobalColorLegend } from '@/shared/components/GlobalColorLegend/GlobalColorLegend'
 import { WidgetHeader } from '@/shared/components/WidgetHeader/WidgetHeader'
 import { APP_NAME } from '@/shared/constants/app.constants'
 import { useContainerSize } from '@/shared/lib/useContainerSize'
@@ -43,6 +44,7 @@ export default function HomePage() {
       <section className={styles.page}>
         <header className={styles.pageTitleBar}>
           <h1 className={styles.pageTitle}>{APP_NAME}</h1>
+          <GlobalColorLegend />
         </header>
 
         <section className={styles.dashboardGrid}>

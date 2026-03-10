@@ -1,14 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import {
-  arc,
-  color,
-  max,
-  min,
-  select,
-  type BaseType,
-  type DefaultArcObject,
-  type Selection
-} from 'd3'
+import { arc, color, max, min, select, type DefaultArcObject, type Selection } from 'd3'
 import { ViewStateOverlay } from '@/shared/components/ViewStateOverlay/ViewStateOverlay'
 import { fmtDayLabel, fmtHours } from '@/shared/lib/formatUtils'
 import { buildPortColorMap } from '@/shared/lib/portColors'
@@ -36,9 +27,9 @@ const PORT_BAND_Y_INSET = BARGE_CARGO_GANTT_CONFIG.portBand.yInset
 const PORT_BAND_ACTIVE_OPACITY = BARGE_CARGO_GANTT_CONFIG.portBand.activeOpacity
 const PORT_BAND_STROKE_WIDTH = BARGE_CARGO_GANTT_CONFIG.portBand.strokeWidth
 
-type AnySelection = Selection<BaseType, unknown, null, undefined>
 type SvgSelection = Selection<SVGSVGElement, unknown, null, undefined>
 type GroupSelection = Selection<SVGGElement, unknown, null, undefined>
+type DefsSelection = Selection<SVGDefsElement, unknown, null, undefined>
 type TooltipState = {
   event: InteractiveEvent
   x: number
@@ -166,8 +157,8 @@ function createLayout(width: number, height: number | undefined, data: GanttData
 }
 
 function mixColors(colorA: string, colorB: string, ratio: number) {
-  const left = color(colorA)
-  const right = color(colorB)
+  const left = color(colorA)?.rgb()
+  const right = color(colorB)?.rgb()
 
   if (!left && !right) return '#000000'
   if (!left) return right?.formatRgb() ?? '#000000'
@@ -205,7 +196,7 @@ function getPortBandPaint(
   }
 }
 
-function renderDefs(defs: AnySelection, palette: ChartPalette) {
+function renderDefs(defs: DefsSelection, palette: ChartPalette) {
   const gLoad = defs
     .append('linearGradient')
     .attr('id', 'bcgv-load')
@@ -565,7 +556,7 @@ function renderShipRow(
         .attr('font-weight', 600)
         .call(text => {
           const valueFontSize = Math.max(9, Math.min(15, layout.donutOuterRadius * 0.66))
-          const percentFontSize = Math.max(6, Math.min(10, layout.donutOuterRadius * 0.38))
+          const percentFontSize = Math.max(8, Math.min(10, layout.donutOuterRadius * 0.58))
 
           text
             .append('tspan')
@@ -710,10 +701,14 @@ function renderTransshipConnections(
       .attr('x', (x1 + x2) / 2)
       .attr('y', startRowBoundaryY - 4)
       .attr('text-anchor', 'middle')
-      .attr('font-size', 8)
+      .attr('font-size', 10)
+      .attr('paint-order', 'stroke')
+      .attr('stroke', palette.chart.surface)
+      .attr('stroke-width', 3)
+      .attr('stroke-linejoin', 'round')
       .attr('fill', palette.cTrans)
       .attr('opacity', 1)
-      .text(`${connection.teu} TEU · ${fmtHours(transferHours)}h`)
+      .text(`${connection.count} 箱 · ${fmtHours(transferHours)}h`)
   })
 }
 

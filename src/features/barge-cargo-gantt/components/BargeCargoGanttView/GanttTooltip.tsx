@@ -48,15 +48,15 @@ export function GanttTooltip({ event, position, visible }: GanttTooltipProps) {
           <div>
             时段：{fmtDate(event.startTime)} ~ {fmtDate(event.endTime)}
           </div>
-          <div>TEU：{'teu' in event ? (event.teu ?? '-') : '-'}</div>
-          <div>积载率：{loadRate}</div>
+          <div>箱数：{'teu' in event ? (event.teu ?? '-') : '-'}</div>
+          <div>箱量占比：{loadRate}</div>
           {'cargo' in event && event.cargo ? (
             <>
               <div>
                 箱型：大箱 {event.cargo.big} / 小箱 {event.cargo.normal} / 危险品{' '}
                 {event.cargo.danger}
               </div>
-              <div>船上箱量：{event.cargo.onboard}</div>
+              <div>船上箱数：{event.cargo.onboard}</div>
             </>
           ) : null}
         </>

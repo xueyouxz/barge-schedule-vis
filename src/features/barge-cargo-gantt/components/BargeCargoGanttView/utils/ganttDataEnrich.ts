@@ -1,5 +1,5 @@
 import { extractRouteChain, parseTeu } from '@/shared/lib/parseUtils'
-import type { GanttDataset } from '../types'
+import type { GanttDataset, GanttEvent, TransshipConnection } from '../types'
 
 export type ContainerRecordRow = {
   箱号?: string
@@ -24,18 +24,22 @@ function resolveMainlinePort(route: string | undefined, fallbackPort: string): s
   return chain[chain.length - 1] || fallbackPort || '未指定干线码头'
 }
 
+export type RouteLeg = {
+  fromPort: string
+  toPort: string
+  bargeId: number
+}
+
 /**
  * 解析 route 字符串中的每个运输段，返回 [{fromPort, toPort, bargeId}, ...] 数组。
  * route 格式：[('QBA', 'TC2', 0), ('TC2', 'BLCT3', 2)]
  * bargeId 与 barge_records.json 的整数键对应，可据此查到实际承运驳船的 vessel/voyage。
  */
-function parseRouteLegs(
-  route?: string
-): Array<{ fromPort: string; toPort: string; bargeId: number }> {
+export function parseRouteLegs(route?: string): RouteLeg[] {
   if (!route) return []
 
   const tupleRegex = /\(\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*(\d+)\s*\)/g
-  const legs: Array<{ fromPort: string; toPort: string; bargeId: number }> = []
+  const legs: RouteLeg[] = []
   let match: RegExpExecArray | null
 
   while ((match = tupleRegex.exec(route)) !== null) {
@@ -47,6 +51,115 @@ function parseRouteLegs(
   }
 
   return legs
+}
+
+function buildEventLookup(dataset: GanttDataset) {
+  const loadingEvents = new Map<string, GanttEvent[]>()
+  const unloadingEvents = new Map<string, GanttEvent[]>()
+
+  dataset.events.forEach(event => {
+    if (event.type !== 'loading' && event.type !== 'unloading') return
+
+    const key = `${event.vessel}|${event.voyage}|${event.port}`
+    const target = event.type === 'loading' ? loadingEvents : unloadingEvents
+    const list = target.get(key) ?? []
+    list.push(event)
+    target.set(key, list)
+  })
+
+  const sortByEndTime = (left: GanttEvent, right: GanttEvent) =>
+    left.endTime.getTime() - right.endTime.getTime()
+
+  loadingEvents.forEach(list => list.sort(sortByEndTime))
+  unloadingEvents.forEach(list => list.sort(sortByEndTime))
+
+  return { loadingEvents, unloadingEvents }
+}
+
+function findBestConnectionEventsForLegPair(
+  fromLeg: RouteLeg,
+  toLeg: RouteLeg,
+  loadingEvents: Map<string, GanttEvent[]>,
+  unloadingEvents: Map<string, GanttEvent[]>,
+  bargeIdToVesselVoyage: Map<number, string>
+): { fromEvent: GanttEvent; toEvent: GanttEvent } | null {
+  const fromVesselVoyage = bargeIdToVesselVoyage.get(fromLeg.bargeId)
+  const toVesselVoyage = bargeIdToVesselVoyage.get(toLeg.bargeId)
+  if (!fromVesselVoyage || !toVesselVoyage) return null
+
+  const fromCandidates = unloadingEvents.get(`${fromVesselVoyage}|${fromLeg.toPort}`) ?? []
+  const toCandidates = loadingEvents.get(`${toVesselVoyage}|${toLeg.fromPort}`) ?? []
+  if (!fromCandidates.length || !toCandidates.length) return null
+
+  let bestPair: { fromEvent: GanttEvent; toEvent: GanttEvent } | null = null
+  let bestGap = Number.POSITIVE_INFINITY
+
+  fromCandidates.forEach(fromEvent => {
+    toCandidates.forEach(toEvent => {
+      const gap = toEvent.endTime.getTime() - fromEvent.endTime.getTime()
+      if (gap < 0) return
+
+      if (gap < bestGap) {
+        bestGap = gap
+        bestPair = { fromEvent, toEvent }
+      }
+    })
+  })
+
+  return bestPair
+}
+
+export function buildTransshipConnectionsFromContainerRows(
+  dataset: GanttDataset,
+  containerRows: ContainerRecordRow[],
+  bargeIdToVesselVoyage: Map<number, string>
+): TransshipConnection[] {
+  const { loadingEvents, unloadingEvents } = buildEventLookup(dataset)
+  const connectionTotals = new Map<string, { teu: number; count: number }>()
+
+  containerRows.forEach(row => {
+    const legs = parseRouteLegs(row.route)
+    if (legs.length < 2) return
+
+    const teu = parseTeu(row.TEU)
+    if (teu <= 0) return
+
+    for (let index = 0; index < legs.length - 1; index += 1) {
+      const currentLeg = legs[index]
+      const nextLeg = legs[index + 1]
+
+      if (currentLeg.bargeId === nextLeg.bargeId) continue
+      if (currentLeg.toPort !== nextLeg.fromPort) continue
+
+      const matchedEvents = findBestConnectionEventsForLegPair(
+        currentLeg,
+        nextLeg,
+        loadingEvents,
+        unloadingEvents,
+        bargeIdToVesselVoyage
+      )
+      if (!matchedEvents) continue
+
+      const connectionKey = `${matchedEvents.fromEvent.id}->${matchedEvents.toEvent.id}`
+      const current = connectionTotals.get(connectionKey) ?? { teu: 0, count: 0 }
+      current.teu += teu
+      current.count += 1
+      connectionTotals.set(connectionKey, current)
+    }
+  })
+
+  return Array.from(connectionTotals.entries())
+    .map(([key, totals]) => {
+      const [fromEventId, toEventId] = key.split('->')
+      return {
+        id: `TC-${fromEventId}-${toEventId}`,
+        fromEventId,
+        toEventId,
+        teu: totals.teu,
+        count: totals.count
+      }
+    })
+    .sort((left, right) => left.id.localeCompare(right.id))
 }
 
 /**

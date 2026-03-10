@@ -18,6 +18,7 @@ export type ContainerLoadType = 'empty' | 'heavy'
 export interface MainlineGroup {
   route: string
   routeLabel: string
+  mainlinePort: string
   teu: number
   count: number
   containers: ContainerLoadType[]

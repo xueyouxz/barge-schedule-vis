@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import maplibregl from 'maplibre-gl'
 import Map, {
   AttributionControl,
@@ -9,28 +8,13 @@ import Map, {
   type MapRef
 } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { COMMON_DATA_ROOT } from '@/shared/constants/scenarioConfig'
 import { ViewStateOverlay } from '@/shared/components/ViewStateOverlay/ViewStateOverlay'
+import { resolvePortColor } from '@/shared/lib/portColors'
 import { useTheme } from '@/shared/theme'
-import { fetchJson } from '@/shared/lib/fetchUtils'
+import { usePortLocations, type PortLocation } from '@/shared/hooks/usePortLocations'
 import { buildMapStyle, MAP_DEFAULTS } from './mapStyle.config'
 import styles from './PortLocationMap.module.css'
-
-type PortLocationRecord = Record<
-  string,
-  {
-    name: string
-    lat: number
-    lon: number
-  }
->
-
-type PortLocation = {
-  code: string
-  name: string
-  lat: number
-  lon: number
-}
+import type { CSSProperties } from 'react'
 
 export interface PortLocationMapProps {
   compact?: boolean
@@ -63,23 +47,7 @@ export function PortLocationMap({
   const mapRef = useRef<MapRef | null>(null)
   const [isMapReady, setIsMapReady] = useState(false)
   const [internalSelectedPortCode, setInternalSelectedPortCode] = useState<string>()
-
-  const portsQuery = useQuery({
-    queryKey: ['port-location-map', 'port-locations'],
-    queryFn: async () => {
-      const payload = await fetchJson<PortLocationRecord>(`${COMMON_DATA_ROOT}/port_locations.json`)
-      return Object.entries(payload)
-        .map(([code, value]) => ({
-          code,
-          name: value.name,
-          lat: value.lat,
-          lon: value.lon
-        }))
-        .sort((left, right) => left.code.localeCompare(right.code))
-    }
-  })
-
-  const ports = useMemo(() => portsQuery.data ?? [], [portsQuery.data])
+  const { data: ports, isLoading, error } = usePortLocations()
   const effectiveSelectedPortCode = selectedPortCode ?? internalSelectedPortCode
   const selectedPort = useMemo(
     () => ports.find(port => port.code === effectiveSelectedPortCode) ?? null,
@@ -155,6 +123,11 @@ export function PortLocationMap({
                 aria-label={`${port.name} (${port.code})`}
                 className={`${styles.marker} ${effectiveSelectedPortCode === port.code ? styles.markerActive : ''}`.trim()}
                 onClick={() => handlePortSelect(port.code)}
+                style={
+                  {
+                    '--marker-port-color': resolvePortColor(port.code, theme)
+                  } as CSSProperties
+                }
                 type='button'
               >
                 <span className={styles.markerDot} />
@@ -187,8 +160,8 @@ export function PortLocationMap({
 
         <ViewStateOverlay
           overlay
-          loading={portsQuery.isLoading}
-          error={portsQuery.error instanceof Error ? portsQuery.error.message : null}
+          loading={isLoading}
+          error={error}
           loadingText='正在加载港口地图...'
         />
       </div>
