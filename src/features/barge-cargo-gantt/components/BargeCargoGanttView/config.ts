@@ -65,10 +65,6 @@ export const BARGE_CARGO_GANTT_CONFIG = {
     dayLabelOffsetX: 6,
     /** 日期文字字号（px） */
     dayLabelFontSize: 10,
-    /** 日期文字颜色 */
-    dayLabelColor: '#4a4540',
-    /** 日期色带边框颜色（同时用于头部分隔线） */
-    borderColor: '#d8d5ce',
     /** 日期色带边框线宽（px） */
     borderWidth: 0.8
   },
@@ -84,62 +80,13 @@ export const BARGE_CARGO_GANTT_CONFIG = {
     /** 非高亮港口时的透明度 */
     inactiveOpacity: 0.2,
     /** 背景区块边框宽度（px） */
-    strokeWidth: 0.8,
-    /** 不同港口轮转使用的柔和配色（与当前米色系底图匹配） */
-    palette: [
-      '#cfe4f7',
-      '#cfead3',
-      '#f7dfc6',
-      '#ddd4f2',
-      '#f5d2de',
-      '#cbe8ea',
-      '#f2e4b8',
-      '#ced8f6',
-      '#f0d7c6',
-      '#d2e3d0'
-    ],
-    /** 兜底颜色（超出调色板或港口缺失） */
-    fallbackColor: '#e8e4dc'
-  },
-
-  /**
-   * 调色与透明度
-   */
-  colors: {
-    /** 装货主色 */
-    load: '#2563a8',
-    /** 卸货主色（同时用于 ETD 红线） */
-    unload: '#b34a2a',
-    /** 中转连线颜色 */
-    transship: '#c47a1e',
-    /** 航行线颜色 */
-    sail: '#7a7068',
-
-    /** 圆环图：大箱颜色 */
-    cargoBig: '#5a7fa8',
-    /** 圆环图：普箱颜色 */
-    cargoNormal: '#6a9a6a',
-    /** 圆环图：危险品颜色 */
-    cargoDanger: '#b85050',
-
-    /** 交替日背景色（偶数日） */
-    dayBandEven: '#f8f7f4',
-    /** 交替日背景色（奇数日） */
-    dayBandOdd: '#f2f0ec'
+    strokeWidth: 0.8
   },
 
   /**
    * 渐变与线型细节
    */
   drawing: {
-    /** 装货块渐变色（上） */
-    loadGradientTop: '#4a80c4',
-    /** 装货块渐变色（下） */
-    loadGradientBottom: '#1d4f8a',
-    /** 卸货块渐变色（上） */
-    unloadGradientTop: '#c96040',
-    /** 卸货块渐变色（下） */
-    unloadGradientBottom: '#8a3018',
     /** ETD 线虚线样式 */
     etdDashArray: '4 3',
     /** 中转连线虚线样式 */
