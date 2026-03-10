@@ -14,7 +14,7 @@ export const BARGE_CARGO_GANTT_CONFIG = {
     /** 左侧船舶标签栏宽度（px） */
     labelWidth: 0,
     /** 单条船舶轨道高度（px） */
-    rowHeight: 92,
+    rowHeight: 52,
     /** 顶部时间轴头部高度（px） */
     headerHeight: 36,
     /** 画布底部内边距（px） */

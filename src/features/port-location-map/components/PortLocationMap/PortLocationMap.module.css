@@ -67,8 +67,8 @@
   font-weight: 700;
   color: var(--chart-text);
   white-space: nowrap;
-  background: rgb(255 255 255 / 94%);
-  border: 1px solid var(--chart-border);
+  background: color-mix(in srgb, var(--chart-surface) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--chart-border) 82%, var(--chart-surface));
 }
 
 .markerActive .markerDot {

@@ -19,8 +19,8 @@ export const CONTAINER_GRID = {
 
 export const ROW_DECORATION_STYLE = {
   backgroundOpacity: 0.72,
-  dividerDashArray: '10 8',
-  dividerOpacity: 0.5
+  dividerDashArray: undefined,
+  dividerOpacity: 0.88
 } as const
 
 export const BLOCK_STYLE = {

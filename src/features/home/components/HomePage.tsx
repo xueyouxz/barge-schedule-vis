@@ -17,6 +17,11 @@ type ViewPanelProps = {
   renderStatic?: () => ReactNode
 }
 
+type MeasuredPanelProps = {
+  className?: string
+  children: (size: { width: number; height: number }) => ReactNode
+}
+
 function ViewPanel({ className, title, children, renderStatic }: ViewPanelProps) {
   const [ref, size] = useContainerSize<HTMLDivElement>()
   const content = renderStatic
@@ -32,6 +37,16 @@ function ViewPanel({ className, title, children, renderStatic }: ViewPanelProps)
         {content}
       </div>
     </section>
+  )
+}
+
+function MeasuredPanel({ className, children }: MeasuredPanelProps) {
+  const [ref, size] = useContainerSize<HTMLDivElement>()
+
+  return (
+    <div ref={ref} className={className}>
+      {size.width > 0 && size.height > 0 ? children(size) : null}
+    </div>
   )
 }
 
@@ -55,7 +70,7 @@ export default function HomePage() {
         </header>
 
         <section className={styles.dashboardGrid}>
-          <ViewPanel className={styles.cargoPanel} title='主线港口箱量分布'>
+          <ViewPanel className={styles.cargoPanel} title='箱量分布视图'>
             {size => (
               <PortCargoByMainlineView
                 width={size.width}
@@ -66,28 +81,32 @@ export default function HomePage() {
             )}
           </ViewPanel>
 
-          <ViewPanel
-            className={styles.mapPanel}
-            title='港口地理位置'
-            renderStatic={() => (
+          <section className={[styles.panelCard, styles.mapPanel].join(' ')}>
+            <WidgetHeader title='港口地理位置' />
+            <div className={styles.mapPanelBody}>
               <PortLocationMap
                 compact
                 fillContainer
                 selectedPortCode={activePort}
                 onPortSelect={handlePortSelection}
               />
-            )}
-          />
 
-          <ViewPanel className={styles.ganttPanel} title='驳船作业时序甘特'>
-            {size => (
-              <BargeCargoGanttView
-                width={size.width}
-                height={size.height}
-                onBarClick={handleGanttSelection}
-              />
-            )}
-          </ViewPanel>
+              <section className={styles.ganttInset}>
+                <WidgetHeader title='驳船作业时序甘特' />
+                <MeasuredPanel className={styles.ganttInsetBody}>
+                  {size => (
+                    <BargeCargoGanttView
+                      width={size.width}
+                      height={size.height}
+                      onBarClick={handleGanttSelection}
+                    />
+                  )}
+                </MeasuredPanel>
+              </section>
+            </div>
+          </section>
+
+          <section className={[styles.panelCard, styles.placeholderPanel].join(' ')} />
         </section>
       </section>
     </DashboardShell>

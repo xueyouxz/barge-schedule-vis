@@ -108,10 +108,6 @@ function formatCount(count: number): string {
   return `${Math.round(count)}`
 }
 
-function getRowBackground(rowIndex: number): string {
-  return rowIndex % 2 === 0 ? 'var(--chart-row-background-even)' : 'var(--chart-row-background-odd)'
-}
-
 export default function PortCargoByMainlineView({
   width = DEFAULT_VIEW_SIZE.width,
   height = DEFAULT_VIEW_SIZE.height,
@@ -176,9 +172,7 @@ export default function PortCargoByMainlineView({
 
   const emptyCellFill = chart.sail
   const dividerStroke = chart.gridLineColor
-  const blockBackground = chart.surface
   const selectedStroke = chart.load
-  const selectedRowFill = chart.selectedRowFill
 
   return (
     <div className={styles.container}>
@@ -204,14 +198,13 @@ export default function PortCargoByMainlineView({
                 </text>
 
                 <rect
-                  x={0}
+                  x={PORT_LABEL_OFFSET.x}
                   y={rowY}
-                  width={chartWidth}
+                  width={chartWidth - PORT_LABEL_OFFSET.x}
                   height={bandHeight}
-                  fill={isSelectedRow ? selectedRowFill : getRowBackground(rowIndex)}
-                  opacity={ROW_DECORATION_STYLE.backgroundOpacity}
-                  stroke={isSelectedRow ? selectedStroke : 'none'}
-                  strokeWidth={isSelectedRow ? 1.2 : 0}
+                  fill='transparent'
+                  opacity={0}
+                  stroke='none'
                   rx={0}
                 />
 
@@ -221,7 +214,7 @@ export default function PortCargoByMainlineView({
                   y1={rowY + bandHeight}
                   y2={rowY + bandHeight}
                   stroke={isSelectedRow ? selectedStroke : dividerStroke}
-                  strokeDasharray={ROW_DECORATION_STYLE.dividerDashArray}
+                  strokeWidth={1}
                   opacity={ROW_DECORATION_STYLE.dividerOpacity}
                 />
 
@@ -249,13 +242,8 @@ export default function PortCargoByMainlineView({
                         y={blockY}
                         width={blockWidth}
                         height={blockHeight}
-                        fill={blockBackground}
-                        stroke={borderColor}
-                        strokeWidth={
-                          isSelectedRow
-                            ? BLOCK_STYLE.blockStrokeWidth + 0.6
-                            : BLOCK_STYLE.blockStrokeWidth
-                        }
+                        fill='transparent'
+                        stroke='none'
                         style={{ cursor: onBarClick ? 'pointer' : 'default' }}
                         onClick={() => onBarClick?.(portRow.port, block.route)}
                       />

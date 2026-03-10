@@ -15,7 +15,7 @@
 }
 
 .countLabel {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   fill: var(--chart-text);
   stroke: rgb(255 255 255 / 92%);
