@@ -24,16 +24,27 @@ function buildMapSources() {
   }
 }
 
+/**
+ * Keep this palette in sync with src/styles/variables.css.
+ *
+ * Current mapping:
+ * - background -> --color-background
+ * - boundary -> --chart-unload
+ * - label -> --chart-text / --chart-text-muted family
+ *
+ * MapLibre styles cannot read CSS custom properties directly, so these values
+ * must be updated manually when the global theme palette changes.
+ */
 export function getThemePalette(theme: ResolvedTheme) {
   if (theme === 'dark') {
     return {
-      background: '#161c23',
+      background: '#11161c',
       water: '#1b2530',
       waterLine: '#33414e',
       green: '#1c232b',
       building: '#222b34',
       buildingEdge: '#3a4652',
-      roadCase: '#161c23',
+      roadCase: '#11161c',
       roadMain: '#516171',
       roadMinor: '#36424d',
       rail: '#657383',
