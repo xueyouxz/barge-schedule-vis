@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { color as d3Color, scaleBand, scaleLinear } from 'd3'
 import { useTheme } from '@/shared/theme'
 import { resolvePortColor } from '@/shared/lib/portColors'
-import { usePortCargoByMainlineData } from './hooks/usePortCargoByMainlineData'
+import { usePortCargoByMainlineData } from './usePortCargoByMainlineData'
 import type { ContainerLoadType, PortCargoByMainlineViewProps } from './types'
 import {
   BLOCK_GAP,

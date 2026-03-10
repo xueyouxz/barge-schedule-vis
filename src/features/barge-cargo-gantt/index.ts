@@ -1,2 +1,2 @@
-export { BargeCargoGanttView } from './components/BargeCargoGanttView'
-export type { BargeCargoGanttViewProps, GanttEvent } from './components/BargeCargoGanttView'
+export { default as BargeCargoGanttView } from './components/BargeCargoGanttView/BargeCargoGanttView'
+export type { BargeCargoGanttViewProps, GanttEvent } from './components/BargeCargoGanttView/types'

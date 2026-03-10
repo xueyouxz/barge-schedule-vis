@@ -1,2 +1,2 @@
-export { PortLocationMap } from './components/PortLocationMap'
-export type { PortLocationMapProps } from './components/PortLocationMap'
+export { PortLocationMap } from './components/PortLocationMap/PortLocationMap'
+export type { PortLocationMapProps } from './components/PortLocationMap/PortLocationMap'

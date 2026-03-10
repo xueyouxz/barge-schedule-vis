@@ -1,2 +1,2 @@
-export { PortCargoByMainlineView } from './components/PortCargoByMainlineView'
-export type { PortCargoByMainlineViewProps } from './components/PortCargoByMainlineView'
+export { default as PortCargoByMainlineView } from './components/PortCargoByMainlineView/PortCargoByMainlineView'
+export type { PortCargoByMainlineViewProps } from './components/PortCargoByMainlineView/types'
