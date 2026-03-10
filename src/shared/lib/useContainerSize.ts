@@ -1,8 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 
 type ContainerSize = {
   width: number
   height: number
+}
+
+type ElementWidthResult<T extends HTMLElement> = {
+  ref: RefObject<T | null>
+  width: number
 }
 
 export function useContainerSize<T extends HTMLElement>() {
@@ -46,4 +51,13 @@ export function useContainerSize<T extends HTMLElement>() {
   }, [])
 
   return [ref, size] as const
+}
+
+export function useElementWidth<T extends HTMLElement>(): ElementWidthResult<T> {
+  const [ref, size] = useContainerSize<T>()
+
+  return {
+    ref,
+    width: size.width
+  }
 }

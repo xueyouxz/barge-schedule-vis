@@ -1,9 +1,13 @@
 import { useCallback, useMemo } from 'react'
+import { formatEventTimeRange, parseDateTime } from '@/shared/lib/dateUtils'
+import { withAlpha, getReadableTextColor } from '@/shared/lib/colorUtils'
+import { fmt, fmtNum } from '@/shared/lib/formatUtils'
 import { useTheme } from '@/shared/theme'
 import { DataTable, type DataTableColumn } from '@/shared/components/DataTable'
 import type { GanttEvent } from '../BargeCargoGanttView/types'
 import { resolvePortColor } from '@/shared/lib/portColors'
 import { useContainerRecords, type ContainerRecordRow } from './hooks/useContainerRecords'
+import { getEventTypeLabel } from './utils'
 import styles from './CargoTablePanel.module.css'
 
 export interface CargoTablePanelProps {
@@ -14,58 +18,6 @@ export interface CargoTablePanelProps {
 
 type LabelValueRow = { label: string; value: string }
 
-function fmt(value: number | undefined): string {
-  if (value === undefined || value === null) return '-'
-  const formatted = value.toFixed(1)
-  return formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted
-}
-
-function fmtNum(value: string | number | undefined): string {
-  if (value === undefined || value === null || value === '') return '-'
-
-  const numeric = typeof value === 'number' ? value : Number(value)
-  if (Number.isNaN(numeric)) return String(value)
-
-  return fmt(numeric)
-}
-
-function withAlpha(hexColor: string, alpha = 0.25): string {
-  const normalized = hexColor.trim()
-  if (!normalized.startsWith('#')) return hexColor
-
-  const hex = normalized.slice(1)
-  const isShort = hex.length === 3
-  const isLong = hex.length === 6
-  if (!isShort && !isLong) return hexColor
-
-  const full = isShort ? `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}` : hex
-
-  const red = Number.parseInt(full.slice(0, 2), 16)
-  const green = Number.parseInt(full.slice(2, 4), 16)
-  const blue = Number.parseInt(full.slice(4, 6), 16)
-
-  return `rgba(${red}, ${green}, ${blue}, ${alpha})`
-}
-
-function getReadableTextColor(hexColor: string): string {
-  const normalized = hexColor.trim()
-  if (!normalized.startsWith('#')) return 'var(--chart-text)'
-
-  const hex = normalized.slice(1)
-  const isShort = hex.length === 3
-  const isLong = hex.length === 6
-  if (!isShort && !isLong) return 'var(--chart-text)'
-
-  const full = isShort ? `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}` : hex
-
-  const red = Number.parseInt(full.slice(0, 2), 16)
-  const green = Number.parseInt(full.slice(2, 4), 16)
-  const blue = Number.parseInt(full.slice(4, 6), 16)
-  const yiq = (red * 299 + green * 587 + blue * 114) / 1000
-
-  return yiq >= 140 ? '#2a2520' : '#ffffff'
-}
-
 function parseRoutePath(routeRaw?: string): string[] {
   if (!routeRaw) return []
 
@@ -75,54 +27,6 @@ function parseRoutePath(routeRaw?: string): string[] {
   return matches
     .map(segment => segment.replace(/'/g, ''))
     .filter((value, index, array) => value && (index === 0 || value !== array[index - 1]))
-}
-
-function parseDateTime(value: string | undefined): number {
-  if (!value) return Number.NaN
-
-  const matched = value
-    .trim()
-    .match(/^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/)
-  if (!matched) return Number.NaN
-
-  const [, year, month, day, hour, minute, second] = matched
-  return new Date(
-    Number(year),
-    Number(month) - 1,
-    Number(day),
-    Number(hour),
-    Number(minute),
-    Number(second)
-  ).getTime()
-}
-
-function formatEventTimeRange(event: GanttEvent): string {
-  const formatter = new Intl.DateTimeFormat('zh-CN', {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  })
-
-  return `${formatter.format(event.startTime)} - ${formatter.format(event.endTime)}`
-}
-
-function getEventTypeLabel(eventType: GanttEvent['type']): string {
-  switch (eventType) {
-    case 'loading':
-      return '装货'
-    case 'unloading':
-      return '卸货'
-    case 'waiting':
-      return '等待'
-    case 'wrapup':
-      return '收尾'
-    case 'sailing':
-      return '航行'
-    default:
-      return eventType
-  }
 }
 
 export default function CargoTablePanel({

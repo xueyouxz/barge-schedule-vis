@@ -1,11 +1,33 @@
 import type { ResolvedTheme } from '@/shared/theme'
 
-const LIGHT_PRIMARY = '#2f6db2'
-const LIGHT_SECONDARY = '#d97a1d'
+// Keep this palette manually aligned with the core chart colors in variables.css,
+// especially --chart-load, --chart-unload, and related semantic accents.
+const LIGHT_PORT_PALETTE = [
+  '#2f6db2',
+  '#d97a1d',
+  '#8a949e',
+  '#2f855a',
+  '#c05621',
+  '#0f766e',
+  '#7c3aed',
+  '#b7791f',
+  '#00838f',
+  '#b83280'
+] as const
 const LIGHT_FALLBACK = '#9aa6b2'
 
-const DARK_PRIMARY = '#71a7e2'
-const DARK_SECONDARY = '#f29a43'
+const DARK_PORT_PALETTE = [
+  '#71a7e2',
+  '#f29a43',
+  '#808c97',
+  '#68d391',
+  '#f6ad55',
+  '#4fd1c5',
+  '#b794f4',
+  '#f6e05e',
+  '#63b3ed',
+  '#f687b3'
+] as const
 const DARK_FALLBACK = '#8c98a4'
 
 function hashPortId(portId: string): number {
@@ -19,12 +41,8 @@ function hashPortId(portId: string): number {
   return Math.abs(hash)
 }
 
-function getPrimary(theme: ResolvedTheme) {
-  return theme === 'dark' ? DARK_PRIMARY : LIGHT_PRIMARY
-}
-
-function getSecondary(theme: ResolvedTheme) {
-  return theme === 'dark' ? DARK_SECONDARY : LIGHT_SECONDARY
+function getPalette(theme: ResolvedTheme) {
+  return theme === 'dark' ? DARK_PORT_PALETTE : LIGHT_PORT_PALETTE
 }
 
 function getFallback(theme: ResolvedTheme) {
@@ -38,7 +56,8 @@ export function resolvePortColor(portId: string, theme: ResolvedTheme): string {
     return getFallback(theme)
   }
 
-  return hashPortId(safePortId) % 2 === 0 ? getPrimary(theme) : getSecondary(theme)
+  const palette = getPalette(theme)
+  return palette[hashPortId(safePortId) % palette.length] ?? getFallback(theme)
 }
 
 export function buildPortColorMap(portIds: Iterable<string>, theme: ResolvedTheme) {

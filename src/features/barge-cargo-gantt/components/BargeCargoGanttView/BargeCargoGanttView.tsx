@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { arc, color, max, min, select, type DefaultArcObject } from 'd3'
+import { fmtDate, fmtDayLabel, fmtHours } from '@/shared/lib/formatUtils'
+import { buildPortColorMap, resolvePortColor } from '@/shared/lib/portColors'
 import { useTheme } from '@/shared/theme'
 import styles from './BargeCargoGanttView.module.css'
 import { BARGE_CARGO_GANTT_CONFIG } from './config'
 import { useBargeCargoGanttData } from './hooks/useBargeCargoGanttData'
 import type { BargeCargoGanttViewProps, GanttEvent } from './types'
-import { buildPortColorMap, resolvePortColor } from './utils/portColors'
 
 const LABEL_W = BARGE_CARGO_GANTT_CONFIG.layout.labelWidth
 const HEAD_H = BARGE_CARGO_GANTT_CONFIG.layout.headerHeight
@@ -19,23 +20,6 @@ const PORT_BAND_Y_INSET = BARGE_CARGO_GANTT_CONFIG.portBand.yInset
 const PORT_BAND_ACTIVE_OPACITY = BARGE_CARGO_GANTT_CONFIG.portBand.activeOpacity
 const PORT_BAND_INACTIVE_OPACITY = BARGE_CARGO_GANTT_CONFIG.portBand.inactiveOpacity
 const PORT_BAND_STROKE_WIDTH = BARGE_CARGO_GANTT_CONFIG.portBand.strokeWidth
-function fmtDate(date: Date): string {
-  return `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(
-    date.getMinutes()
-  ).padStart(2, '0')}`
-}
-
-function fmtDayLabel(date: Date): string {
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${month}-${day}`
-}
-
-function fmtHours(hours: number): string {
-  const safe = Math.max(0, hours)
-  const rounded = Math.round(safe * 10) / 10
-  return Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(1)
-}
 
 function buildShipPortStaySegments(
   events: GanttEvent[]

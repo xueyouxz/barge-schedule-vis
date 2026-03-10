@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTheme } from '@/shared/theme'
-import { useElementWidth } from '@/shared/lib/useElementWidth'
+import { useElementWidth } from '@/shared/lib/useContainerSize'
 import chrome from '@/shared/components/ScreenPage/ScreenPage.module.css'
 import { BargeCargoGanttView } from '../components/BargeCargoGanttView'
 import type { GanttEvent } from '../components/BargeCargoGanttView'

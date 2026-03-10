@@ -1,5 +1,5 @@
 import { useTheme } from '@/shared/theme'
-import { useElementWidth } from '@/shared/lib/useElementWidth'
+import { useElementWidth } from '@/shared/lib/useContainerSize'
 import chrome from '@/shared/components/ScreenPage/ScreenPage.module.css'
 import { PortCargoByMainlineView } from '../components/PortCargoByMainlineView'
 import styles from './PortCargoByMainlinePage.module.css'
