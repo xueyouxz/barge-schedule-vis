@@ -1,4 +1,4 @@
-export const VIEW_MARGIN = { top: 10, right: 25, bottom: 10, left: 50 } as const
+export const VIEW_MARGIN = { top: 20, right: 24, bottom: 20, left: 56 } as const
 
 export const BLOCK_GAP = 8
 

@@ -5,10 +5,10 @@
     'cargo map map' minmax(0, 1fr)
     'gantt gantt gantt' 320px
     / 420px minmax(0, 1fr) 420px;
-  gap: 8px;
+  gap: 16px;
   width: 1920px;
   height: 1080px;
-  padding: 12px;
+  padding: 16px;
   color: var(--color-text);
   background: var(--color-background);
 }
@@ -25,7 +25,7 @@
   padding: 0 16px;
   overflow: hidden;
   background: linear-gradient(90deg, var(--color-surface-strong), var(--color-surface));
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--color-border);
 }
 
 .pageTitle {
@@ -52,14 +52,16 @@
 }
 
 .panelCard {
+  box-sizing: border-box;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 0;
+  gap: 10px;
   min-width: 0;
   min-height: 0;
+  padding: 0 16px 16px;
   overflow: hidden;
-  background: var(--color-background);
-  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
 }
 
 .panelBody {

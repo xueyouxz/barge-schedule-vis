@@ -2,13 +2,14 @@
   display: flex;
   align-items: center;
   min-width: 0;
+  padding: 12px 0 0;
 }
 
 .title {
   min-width: 0;
   overflow: hidden;
   font-family: var(--font-body);
-  font-size: 0.78rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--color-text-strong);
   text-overflow: ellipsis;

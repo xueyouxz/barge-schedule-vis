@@ -2,7 +2,6 @@
   overflow: auto hidden;
   color: var(--chart-text);
   background: var(--chart-background);
-  border: 1px solid var(--chart-border);
 }
 
 .svg {

@@ -22,7 +22,6 @@
   z-index: 10;
   pointer-events: none;
   content: '';
-  border: 1px solid var(--chart-border);
 }
 
 .stageCompact {
