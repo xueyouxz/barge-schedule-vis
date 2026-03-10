@@ -5,7 +5,6 @@ import { DashboardShell } from '@/shared/components/DashboardShell/DashboardShel
 import { WidgetHeader } from '@/shared/components/WidgetHeader/WidgetHeader'
 import { useContainerSize } from '@/shared/lib/useContainerSize'
 import { BargeCargoGanttView, type InteractiveEvent } from '@/features/barge-cargo-gantt'
-import { useBargeCargoGanttData } from '@/features/barge-cargo-gantt/components/BargeCargoGanttView/hooks/useBargeCargoGanttData'
 import { PortCargoByMainlineView } from '@/features/port-cargo-mainline'
 import { PortLocationMap } from '@/features/port-location-map'
 import styles from './HomePage.module.css'
@@ -38,7 +37,6 @@ function ViewPanel({ className, title, children, renderStatic }: ViewPanelProps)
 export default function HomePage() {
   const dispatch = useAppDispatch()
   const activePort = useAppSelector(state => state.dashboardFilter.selectedPort) ?? undefined
-  const { error: ganttError } = useBargeCargoGanttData()
 
   const handlePortSelection = (portCode: string) => {
     dispatch(toggleSelectedPort(portCode))
@@ -77,17 +75,13 @@ export default function HomePage() {
           />
 
           <ViewPanel className={styles.ganttPanel} title='驳船作业时序甘特'>
-            {size =>
-              ganttError ? (
-                <div>甘特图数据加载失败：{ganttError}</div>
-              ) : (
-                <BargeCargoGanttView
-                  width={size.width}
-                  height={size.height}
-                  onBarClick={handleGanttSelection}
-                />
-              )
-            }
+            {size => (
+              <BargeCargoGanttView
+                width={size.width}
+                height={size.height}
+                onBarClick={handleGanttSelection}
+              />
+            )}
           </ViewPanel>
         </section>
       </section>
