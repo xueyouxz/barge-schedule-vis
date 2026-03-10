@@ -1,9 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { dashboardFilterReducer } from './dashboardFilterSlice'
+import { sceneReducer } from './sceneSlice'
 
 export const store = configureStore({
   reducer: {
-    dashboardFilter: dashboardFilterReducer
+    dashboardFilter: dashboardFilterReducer,
+    scene: sceneReducer
   }
 })
 

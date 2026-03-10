@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import type { BargeInfoRaw, BargeRecordRaw, GanttDataset } from '../types'
-import { DATA_PATHS } from '@/shared/constants/scenarioConfig'
 import { fetchCsvRows, fetchJson, fetchJsonOptional } from '@/shared/lib/fetchUtils'
+import { useActiveSceneDataPaths } from '@/shared/hooks/useActiveSceneDataPaths'
 import {
   buildEtdMarksFromContainerRows,
   enrichEventCargoDetails,
@@ -14,17 +14,19 @@ export function useBargeCargoGanttData(
   recordsPath?: string,
   containerRecordsPath?: string
 ) {
-  const infoUrl = infoPath ?? DATA_PATHS.bargeInfos
-  const recUrl = recordsPath ?? DATA_PATHS.bargeRecords
-  const containerUrl = containerRecordsPath ?? DATA_PATHS.containerRecords
+  const dataPaths = useActiveSceneDataPaths()
+  const infoUrl = infoPath ?? dataPaths?.bargeInfos
+  const recUrl = recordsPath ?? dataPaths?.bargeRecords
+  const containerUrl = containerRecordsPath ?? dataPaths?.containerRecords
 
   const query = useQuery({
     queryKey: ['barge-cargo-gantt-data', infoUrl, recUrl, containerUrl],
+    enabled: Boolean(infoUrl && recUrl && containerUrl),
     queryFn: async (): Promise<GanttDataset | null> => {
       const [infos, rawRecords, containerRows] = await Promise.all([
-        fetchJson<BargeInfoRaw[]>(infoUrl),
-        fetchJsonOptional<Record<string, BargeRecordRaw>>(recUrl),
-        fetchCsvRows<ContainerRecordRow>(containerUrl).catch(() => null)
+        fetchJson<BargeInfoRaw[]>(infoUrl as string),
+        fetchJsonOptional<Record<string, BargeRecordRaw>>(recUrl as string),
+        fetchCsvRows<ContainerRecordRow>(containerUrl as string).catch(() => null)
       ])
 
       const recordMap = new Map<string, BargeRecordRaw>()

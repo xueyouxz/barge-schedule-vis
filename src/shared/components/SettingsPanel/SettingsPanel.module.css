@@ -1,0 +1,77 @@
+.panel {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: 2px 0 0;
+}
+
+.panelHeader {
+  display: grid;
+  gap: 2px;
+}
+
+.kicker {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-strong);
+  letter-spacing: 0.04em;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 220px);
+  gap: 10px;
+  align-items: center;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--color-muted-strong);
+  letter-spacing: 0.03em;
+}
+
+.select {
+  width: 220px;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-strong);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-strong) 92%, transparent),
+    color-mix(in srgb, var(--color-surface) 98%, transparent)
+  );
+  border: 1px solid color-mix(in srgb, var(--color-border-strong) 72%, transparent);
+  border-radius: 0;
+  outline: none;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background-color 120ms ease;
+}
+
+.select:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 42%, var(--color-border-strong));
+}
+
+.select:focus {
+  border-color: color-mix(in srgb, var(--color-accent) 72%, var(--color-border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 14%, transparent);
+}
+
+.select:disabled {
+  color: var(--color-muted);
+  cursor: wait;
+}

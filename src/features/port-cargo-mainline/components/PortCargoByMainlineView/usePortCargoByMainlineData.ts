@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import type { ContainerLoadType, CsvContainerRow, MainlineGroup, PortMainlineRow } from '../types'
-import { DATA_PATHS } from '@/shared/constants/scenarioConfig'
+import type { ContainerLoadType, CsvContainerRow, MainlineGroup, PortMainlineRow } from './types'
+import { useActiveSceneDataPaths } from '@/shared/hooks/useActiveSceneDataPaths'
 import { fetchCsvRows } from '@/shared/lib/fetchUtils'
 import { extractRouteChain, parseTeu } from '@/shared/lib/parseUtils'
 
@@ -30,7 +30,7 @@ function resolveContainerRecordsPaths(fileList: string[]): string[] {
   })
 
   if (resolved.size === 0) {
-    resolved.add(DATA_PATHS.containerRecords)
+    return []
   }
 
   return Array.from(resolved)
@@ -104,11 +104,18 @@ function buildRowsByOriginPort(allRows: CsvContainerRow[]): PortMainlineRow[] {
 }
 
 export function usePortCargoByMainlineData(csvFiles?: string[]) {
-  const fileList = csvFiles && csvFiles.length > 0 ? csvFiles : [DATA_PATHS.containerRecords]
+  const dataPaths = useActiveSceneDataPaths()
+  const fileList =
+    csvFiles && csvFiles.length > 0
+      ? csvFiles
+      : dataPaths?.containerRecords
+        ? [dataPaths.containerRecords]
+        : []
   const containerRecordsPaths = resolveContainerRecordsPaths(fileList)
 
   const query = useQuery({
     queryKey: ['port-cargo-by-mainline-data', ...containerRecordsPaths],
+    enabled: containerRecordsPaths.length > 0,
     queryFn: async () => {
       const allRows = (
         await Promise.all(containerRecordsPaths.map(path => fetchCsvRows<CsvContainerRow>(path)))

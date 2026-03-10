@@ -9,7 +9,7 @@ import Map, {
   type MapRef
 } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { DATA_PATHS } from '@/shared/constants/scenarioConfig'
+import { COMMON_DATA_ROOT } from '@/shared/constants/scenarioConfig'
 import { ViewStateOverlay } from '@/shared/components/ViewStateOverlay/ViewStateOverlay'
 import { useTheme } from '@/shared/theme'
 import { fetchJson } from '@/shared/lib/fetchUtils'
@@ -67,7 +67,7 @@ export function PortLocationMap({
   const portsQuery = useQuery({
     queryKey: ['port-location-map', 'port-locations'],
     queryFn: async () => {
-      const payload = await fetchJson<PortLocationRecord>(DATA_PATHS.portLocations)
+      const payload = await fetchJson<PortLocationRecord>(`${COMMON_DATA_ROOT}/port_locations.json`)
       return Object.entries(payload)
         .map(([code, value]) => ({
           code,

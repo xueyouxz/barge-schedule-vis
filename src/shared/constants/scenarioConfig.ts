@@ -1,39 +1,49 @@
-/**
- * 仿真场景数据路径配置。
- *
- * 切换场景时只需修改 ACTIVE_SCENARIO，所有视图组件自动读取对应路径。
- * 后续如需动态切换，可将此配置改为 React Context 或 Redux state。
- */
-export interface ScenarioConfig {
-  /** 场景标识 */
+export interface SceneOption {
   id: string
-  /** 场景输出目录根路径 */
+  label: string
+}
+
+export interface ScenarioConfig {
+  id: string
+  label: string
+  root: string
   outputRoot: string
-  /** 公共数据目录 */
   commonRoot: string
 }
 
-const SCENARIOS: Record<string, ScenarioConfig> = {
-  default: {
-    id: 'default',
-    outputRoot: '/data/output/2026-01-13 17-20-38',
-    commonRoot: '/data/common'
-  }
-  // 后续新增场景在此添加：
-  // 'scenario-2': {
-  //   id: 'scenario-2',
-  //   outputRoot: '/data/output/2026-02-01 09-00-00',
-  //   commonRoot: '/data/common',
-  // },
+export interface DataPaths {
+  bargeInfos: string
+  bargeRecords: string
+  containerRecords: string
+  portLocations: string
 }
 
-/** 当前激活的场景 */
-export const ACTIVE_SCENARIO = SCENARIOS.default
+export const SCENES_MANIFEST_PATH = '/data/scenes/index.json'
+export const SCENES_ROOT = '/data/scenes'
+export const COMMON_DATA_ROOT = '/data/common'
 
-/** 各数据文件的完整路径 */
-export const DATA_PATHS = {
-  bargeInfos: `${ACTIVE_SCENARIO.outputRoot}/barge_infos.json`,
-  bargeRecords: `${ACTIVE_SCENARIO.outputRoot}/barge_records.json`,
-  containerRecords: `${ACTIVE_SCENARIO.outputRoot}/container_records.csv`,
-  portLocations: `${ACTIVE_SCENARIO.commonRoot}/port_locations.json`
-} as const
+export function buildScenarioConfig(scene: SceneOption): ScenarioConfig {
+  const root = `${SCENES_ROOT}/${scene.id}`
+
+  return {
+    ...scene,
+    root,
+    outputRoot: `${root}/output`,
+    commonRoot: COMMON_DATA_ROOT
+  }
+}
+
+export function buildDataPaths(scene: SceneOption | null): DataPaths | null {
+  if (!scene) {
+    return null
+  }
+
+  const config = buildScenarioConfig(scene)
+
+  return {
+    bargeInfos: `${config.outputRoot}/barge_infos.json`,
+    bargeRecords: `${config.outputRoot}/barge_records.json`,
+    containerRecords: `${config.outputRoot}/container_records.csv`,
+    portLocations: `${config.commonRoot}/port_locations.json`
+  }
+}

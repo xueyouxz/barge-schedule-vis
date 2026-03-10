@@ -30,15 +30,15 @@ export const BARGE_CARGO_GANTT_CONFIG = {
    */
   donut: {
     /** 外环最小半径（px） */
-    minOuterRadius: 8,
+    minOuterRadius: 10,
     /** 外环最大半径（px） */
-    maxOuterRadius: 46,
+    maxOuterRadius: 56,
     /** 外环半径占单条驳船轨道高度比例 */
-    outerRadiusRowHeightRatio: 0.2,
+    outerRadiusRowHeightRatio: 0.3,
     /** 当航行段宽度 >= outerRadius * minSegmentWidthFactor 才绘制圆环 */
-    minSegmentWidthFactor: 2,
+    minSegmentWidthFactor: 2.8,
     /** 多分片之间的角度间隔（rad） */
-    segmentGap: 0.02,
+    segmentGap: 0.05,
     /** 扇区圆角（px） */
     cornerRadius: 1
   },
@@ -52,7 +52,7 @@ export const BARGE_CARGO_GANTT_CONFIG = {
     /** 日期文字在色带内的左侧偏移（px） */
     dayLabelOffsetX: 6,
     /** 日期文字字号（px） */
-    dayLabelFontSize: 16,
+    dayLabelFontSize: 15,
     /** 日期色带边框线宽（px） */
     borderWidth: 0.8
   },
@@ -62,7 +62,7 @@ export const BARGE_CARGO_GANTT_CONFIG = {
    */
   portBand: {
     /** 区块在轨道内的上下留白（px） */
-    yInset: 10,
+    yInset: 4,
     /** 港口驻留背景区块透明度 */
     activeOpacity: 0.62,
     /** 背景区块边框宽度（px） */

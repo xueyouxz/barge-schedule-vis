@@ -2,8 +2,9 @@
   display: grid;
   grid-template:
     'title title' 44px
-    'cargo map' minmax(0, 1fr)
-    'placeholder map' minmax(0, 3fr)
+    'settings map' 164px
+    'cargo map' 250px
+    'placeholder map' minmax(0, 1fr)
     / 460px minmax(0, 1fr);
   gap: 10px;
   width: 1920px;
@@ -39,8 +40,17 @@
   white-space: nowrap;
 }
 
+.settingsPanel {
+  grid-area: settings;
+}
+
 .cargoPanel {
   grid-area: cargo;
+}
+
+.settingsPanelBody {
+  display: grid;
+  min-height: 0;
 }
 
 .mapPanel {
@@ -68,7 +78,7 @@
   box-sizing: border-box;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 6px;
+  gap: 0;
   min-width: 0;
   min-height: 0;
   padding: 0 10px 10px;
@@ -109,13 +119,13 @@
 
 .ganttInset {
   position: absolute;
-  right: 10px;
+  right: 0;
   bottom: 10px;
-  left: 10px;
+  left: 0;
   z-index: 1;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  height: 300px;
+  grid-template-rows: minmax(0, 1fr);
+  height: 288px;
   min-height: 0;
   overflow: hidden;
   background: color-mix(in srgb, var(--color-surface) 88%, transparent);
