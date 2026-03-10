@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import type { ContainerLoadType, CsvContainerRow, MainlineGroup, PortMainlineRow } from '../types'
 import { DATA_PATHS } from '@/shared/constants/scenarioConfig'
 import { fetchCsvRows } from '@/shared/lib/fetchUtils'
+import { extractRouteChain, parseTeu } from '@/shared/lib/parseUtils'
 
 function resolveContainerRecordsPaths(fileList: string[]): string[] {
   const resolved = new Set<string>()
@@ -35,13 +36,6 @@ function resolveContainerRecordsPaths(fileList: string[]): string[] {
   return Array.from(resolved)
 }
 
-function parseTeu(value?: string): number {
-  if (!value) return 0
-
-  const parsed = Number.parseFloat(value)
-  return Number.isFinite(parsed) ? parsed : 0
-}
-
 function resolveContainerLoadType(value?: string): ContainerLoadType {
   const normalized = (value || '').trim().toUpperCase()
   return normalized === 'E' ? 'empty' : 'heavy'
@@ -51,21 +45,9 @@ function normalizeRouteLabel(route?: string): string {
   const raw = (route || '').trim()
   if (!raw) return '未指定路径'
 
-  const tokenMatches = Array.from(raw.matchAll(/'([^']+)'/g))
-    .map(match => match[1]?.trim())
-    .filter(Boolean) as string[]
-  if (tokenMatches.length >= 2) {
-    const chain: string[] = []
-
-    tokenMatches.forEach(token => {
-      if (chain.length === 0 || chain[chain.length - 1] !== token) {
-        chain.push(token)
-      }
-    })
-
-    if (chain.length > 1) {
-      return chain.join(' → ')
-    }
+  const chain = extractRouteChain(route)
+  if (chain.length > 1) {
+    return chain.join(' → ')
   }
 
   return raw

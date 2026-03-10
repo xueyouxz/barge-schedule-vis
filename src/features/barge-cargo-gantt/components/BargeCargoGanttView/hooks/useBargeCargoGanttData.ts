@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import type { BargeInfoRaw, BargeRecordRaw, GanttDataset } from '../types'
 import { DATA_PATHS } from '@/shared/constants/scenarioConfig'
 import { fetchCsvRows, fetchJson, fetchJsonOptional } from '@/shared/lib/fetchUtils'
+import { extractRouteChain, parseTeu } from '@/shared/lib/parseUtils'
 import { buildBargeCargoGanttData } from '../utils/transform'
 
 type ContainerRecordRow = {
@@ -19,30 +20,6 @@ function parseSimTime(value?: string): Date | null {
   if (!value) return null
   const d = new Date(value.replace(' ', 'T'))
   return Number.isNaN(d.getTime()) ? null : d
-}
-
-function parseTeu(value?: string): number {
-  if (!value) return 0
-  const n = Number.parseFloat(value)
-  return Number.isFinite(n) ? n : 0
-}
-
-function extractRouteChain(route?: string): string[] {
-  const raw = (route || '').trim()
-  if (!raw) return []
-
-  const tokenMatches = Array.from(raw.matchAll(/'([^']+)'/g))
-    .map(m => m[1]?.trim())
-    .filter(Boolean) as string[]
-  if (tokenMatches.length < 2) return []
-
-  const chain: string[] = []
-  tokenMatches.forEach(token => {
-    if (chain.length === 0 || chain[chain.length - 1] !== token) {
-      chain.push(token)
-    }
-  })
-  return chain
 }
 
 function resolveMainlinePort(route: string | undefined, fallbackPort: string): string {
