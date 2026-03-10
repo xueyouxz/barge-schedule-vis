@@ -19,7 +19,6 @@ const BLOCK_RADIUS = BARGE_CARGO_GANTT_CONFIG.layout.blockRadius
 const MIN_BLOCK_W = BARGE_CARGO_GANTT_CONFIG.layout.minBlockWidth
 const PORT_BAND_Y_INSET = BARGE_CARGO_GANTT_CONFIG.portBand.yInset
 const PORT_BAND_ACTIVE_OPACITY = BARGE_CARGO_GANTT_CONFIG.portBand.activeOpacity
-const PORT_BAND_INACTIVE_OPACITY = BARGE_CARGO_GANTT_CONFIG.portBand.inactiveOpacity
 const PORT_BAND_STROKE_WIDTH = BARGE_CARGO_GANTT_CONFIG.portBand.strokeWidth
 
 function buildShipPortStaySegments(
@@ -58,14 +57,11 @@ export default function BargeCargoGanttView({
   infoPath,
   recordsPath,
   containerRecordsPath,
-  highlightPort,
   onBarClick
 }: BargeCargoGanttViewProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
   const onBarClickRef = useRef(onBarClick)
-  const highlightPortRef = useRef(highlightPort)
-  const highlightUpdaterRef = useRef<Array<(hp: string | undefined) => void>>([])
   const {
     theme,
     tokens: { chart }
@@ -87,10 +83,6 @@ export default function BargeCargoGanttView({
   useEffect(() => {
     onBarClickRef.current = onBarClick
   }, [onBarClick])
-
-  useEffect(() => {
-    highlightPortRef.current = highlightPort
-  }, [highlightPort])
 
   const { data, loading, error } = useBargeCargoGanttData(
     infoPath,
@@ -131,7 +123,6 @@ export default function BargeCargoGanttView({
 
     const svg = select(svgRef.current)
     svg.selectAll('*').remove()
-    highlightUpdaterRef.current = []
 
     const W = Math.max(width, LABEL_W + PAD_R + 1)
     const rowAreaTopY = HEAD_H
@@ -319,8 +310,6 @@ export default function BargeCargoGanttView({
       setSelectedEvent({ event: ev, x: finalX, y: finalY })
     }
 
-    const hasHighlight = !!highlightPortRef.current
-    const isActivePort = (port: string) => !hasHighlight || port === highlightPortRef.current
     const eventById = new Map(data.events.map(ev => [ev.id, ev]))
 
     data.ships.forEach((ship, index) => {
@@ -335,7 +324,6 @@ export default function BargeCargoGanttView({
         const bandW = Math.max(1, (segment.endHour - segment.startHour) * pxPerHour)
         const fill = portColorMap.get(segment.port) ?? portBandFallback
         const stroke = color(fill)?.darker(0.7).formatHex() ?? chart.border
-        const active = isActivePort(segment.port)
 
         // 聚合该港口停靠区间内所有装卸事件的货箱明细
         const portCargoEvents = ship.events.filter(
@@ -389,7 +377,7 @@ export default function BargeCargoGanttView({
               : undefined
         }
 
-        const bandRectEl = portBandG
+        portBandG
           .append('rect')
           .attr('x', x)
           .attr('y', PORT_BAND_Y_INSET)
@@ -398,8 +386,8 @@ export default function BargeCargoGanttView({
           .attr('fill', fill)
           .attr('stroke', stroke)
           .attr('stroke-width', PORT_BAND_STROKE_WIDTH)
-          .attr('stroke-opacity', active ? 0.35 : 0.14)
-          .attr('opacity', active ? PORT_BAND_ACTIVE_OPACITY : PORT_BAND_INACTIVE_OPACITY)
+          .attr('stroke-opacity', 0.35)
+          .attr('opacity', PORT_BAND_ACTIVE_OPACITY)
           .style('cursor', 'pointer')
           .on('mousemove', (e: MouseEvent) => showTip(e, portSyntheticEvent))
           .on('mouseleave', hideTip)
@@ -409,12 +397,6 @@ export default function BargeCargoGanttView({
             openCargoDetail(portSyntheticEvent, LABEL_W + x + bandW / 2, rowY + rowH / 2)
             onBarClickRef.current?.(portSyntheticEvent)
           })
-        highlightUpdaterRef.current.push(hp => {
-          const a = !hp || segment.port === hp
-          bandRectEl
-            .attr('stroke-opacity', a ? 0.35 : 0.14)
-            .attr('opacity', a ? PORT_BAND_ACTIVE_OPACITY : PORT_BAND_INACTIVE_OPACITY)
-        })
       })
 
       rowG
@@ -470,13 +452,8 @@ export default function BargeCargoGanttView({
       const idleEvents = ship.events.filter(ev => ev.type === 'waiting' || ev.type === 'wrapup')
       const cargoEvents = ship.events.filter(ev => ev.type === 'loading' || ev.type === 'unloading')
 
-      const drawNonCargoSegment = (
-        ev: GanttEvent,
-        activeOpacity: number,
-        inactiveOpacity: number
-      ) => {
-        const active = isActivePort(ev.port)
-        const segLineEl = areaG
+      const drawNonCargoSegment = (ev: GanttEvent, opacity: number) => {
+        areaG
           .append('line')
           .attr('x1', ev.startHour * pxPerHour)
           .attr('y1', sailY)
@@ -485,21 +462,17 @@ export default function BargeCargoGanttView({
           .attr('stroke', cSail)
           .attr('stroke-width', BARGE_CARGO_GANTT_CONFIG.drawing.nonCargoLineWidth)
           .attr('stroke-linecap', 'round')
-          .attr('opacity', active ? activeOpacity : inactiveOpacity)
+          .attr('opacity', opacity)
           .on('mousemove', (e: MouseEvent) => showTip(e, ev))
           .on('mouseleave', hideTip)
-        highlightUpdaterRef.current.push(hp => {
-          segLineEl.attr('opacity', !hp || ev.port === hp ? activeOpacity : inactiveOpacity)
-        })
       }
 
       sailingEvents.forEach(ev => {
-        const active = isActivePort(ev.port)
         const x1 = ev.startHour * pxPerHour
         const x2 = ev.endHour * pxPerHour
         const segW = x2 - x1
 
-        drawNonCargoSegment(ev, 0.55, 0.12)
+        drawNonCargoSegment(ev, 0.55)
 
         if (
           ev.cargo &&
@@ -514,10 +487,7 @@ export default function BargeCargoGanttView({
           const donutG = areaG
             .append('g')
             .attr('transform', `translate(${midX}, ${sailY})`)
-            .attr('opacity', active ? 1 : 0.22)
-          highlightUpdaterRef.current.push(hp => {
-            donutG.attr('opacity', !hp || ev.port === hp ? 1 : 0.22)
-          })
+            .attr('opacity', 1)
 
           donutG
             .append('circle')
@@ -588,11 +558,10 @@ export default function BargeCargoGanttView({
       })
 
       idleEvents.forEach(ev => {
-        drawNonCargoSegment(ev, 0.5, 0.1)
+        drawNonCargoSegment(ev, 0.5)
       })
 
       cargoEvents.forEach(ev => {
-        const active = isActivePort(ev.port)
         const x = ev.startHour * pxPerHour
         const bw = Math.max((ev.endHour - ev.startHour) * pxPerHour, MIN_BLOCK_W)
         const isLoading = ev.type === 'loading'
@@ -609,7 +578,7 @@ export default function BargeCargoGanttView({
         const stroke = isLoading ? cLoad : cUnload
         const grad = isLoading ? 'url(#bcgv-load)' : 'url(#bcgv-unload)'
 
-        const shadowRectEl = areaG
+        areaG
           .append('rect')
           .attr('x', x + 1)
           .attr('y', blockY + 1)
@@ -617,12 +586,9 @@ export default function BargeCargoGanttView({
           .attr('height', blockH)
           .attr('rx', BLOCK_RADIUS)
           .attr('fill', stroke)
-          .attr('opacity', active ? 0.06 : 0.02)
-        highlightUpdaterRef.current.push(hp => {
-          shadowRectEl.attr('opacity', !hp || ev.port === hp ? 0.06 : 0.02)
-        })
+          .attr('opacity', 0.06)
 
-        const mainRectEl = areaG
+        areaG
           .append('rect')
           .attr('x', x)
           .attr('y', blockY)
@@ -631,9 +597,9 @@ export default function BargeCargoGanttView({
           .attr('rx', BLOCK_RADIUS)
           .attr('fill', grad)
           .attr('stroke', stroke)
-          .attr('stroke-width', active ? 1.1 : 0.6)
-          .attr('stroke-opacity', active ? 0.9 : 0.2)
-          .attr('opacity', active ? 1 : 0.28)
+          .attr('stroke-width', 1.1)
+          .attr('stroke-opacity', 0.9)
+          .attr('opacity', 1)
           .on('mousemove', (e: MouseEvent) => showTip(e, ev))
           .on('mouseleave', hideTip)
           .on('click', (e: MouseEvent) => {
@@ -641,16 +607,9 @@ export default function BargeCargoGanttView({
             hideTip()
             onBarClickRef.current?.(ev)
           })
-        highlightUpdaterRef.current.push(hp => {
-          const a = !hp || ev.port === hp
-          mainRectEl
-            .attr('stroke-width', a ? 1.1 : 0.6)
-            .attr('stroke-opacity', a ? 0.9 : 0.2)
-            .attr('opacity', a ? 1 : 0.28)
-        })
 
         if (typeof ev.teu === 'number') {
-          const teuTextEl = areaG
+          areaG
             .append('text')
             .attr('x', x + bw / 2)
             .attr('y', isLoading ? loadAmountLabelY : unloadAmountLabelY)
@@ -659,11 +618,8 @@ export default function BargeCargoGanttView({
             .attr('font-size', 8)
             .attr('font-weight', 600)
             .attr('fill', stroke)
-            .attr('opacity', active ? 0.9 : 0.35)
+            .attr('opacity', 0.9)
             .text(`${ev.teu}`)
-          highlightUpdaterRef.current.push(hp => {
-            teuTextEl.attr('opacity', !hp || ev.port === hp ? 0.9 : 0.35)
-          })
         }
 
         blockPositions[ev.id] = {
@@ -683,8 +639,6 @@ export default function BargeCargoGanttView({
 
       const fromEvent = eventById.get(tc.fromEventId)
       const toEvent = eventById.get(tc.toEventId)
-      const active =
-        !hasHighlight || isActivePort(fromEvent?.port ?? '') || isActivePort(toEvent?.port ?? '')
 
       const x1 = from.xMid
       let y1 = from.yBottom
@@ -713,7 +667,7 @@ export default function BargeCargoGanttView({
           : 0
 
       const connG = svg.append('g')
-      const transPolylineEl = connG
+      connG
         .append('polyline')
         .attr('points', polylinePoints)
         .attr('fill', 'none')
@@ -721,23 +675,17 @@ export default function BargeCargoGanttView({
         .attr('stroke-width', 1.2)
         .attr('stroke-dasharray', BARGE_CARGO_GANTT_CONFIG.drawing.transshipDashArray)
         .attr('marker-end', 'url(#bcgv-transship-arrow)')
-        .attr('opacity', active ? 0.68 : 0.14)
+        .attr('opacity', 0.68)
 
-      const transTextEl = connG
+      connG
         .append('text')
         .attr('x', (x1 + x2) / 2)
         .attr('y', startRowBoundaryY - 4)
         .attr('text-anchor', 'middle')
         .attr('font-size', 8)
         .attr('fill', cTrans)
-        .attr('opacity', active ? 1 : 0.22)
+        .attr('opacity', 1)
         .text(`${tc.teu} TEU · ${fmtHours(transferHours)}h`)
-
-      highlightUpdaterRef.current.push(hp => {
-        const a = !hp || fromEvent?.port === hp || toEvent?.port === hp
-        transPolylineEl.attr('opacity', a ? 0.68 : 0.14)
-        transTextEl.attr('opacity', a ? 1 : 0.22)
-      })
     })
 
     svg.on('click', () => {
@@ -760,11 +708,6 @@ export default function BargeCargoGanttView({
     portBandFallback,
     theme
   ])
-
-  // 高亮港口变化时，仅更新已有元素透明度，不触发全量重绘
-  useEffect(() => {
-    highlightUpdaterRef.current.forEach(fn => fn(highlightPort))
-  }, [highlightPort])
 
   const selectedGroups = selectedEvent?.event.cargoDetail?.groups ?? []
   const maxGroupCount = selectedGroups.reduce((m, g) => Math.max(m, g.count), 0)

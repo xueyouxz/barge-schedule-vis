@@ -84,7 +84,6 @@ export default function HomePage() {
                 <BargeCargoGanttView
                   width={size.width}
                   height={size.height}
-                  highlightPort={activePort}
                   onBarClick={handleGanttSelection}
                 />
               )

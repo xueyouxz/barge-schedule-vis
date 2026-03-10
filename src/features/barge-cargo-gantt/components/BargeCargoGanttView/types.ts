@@ -108,7 +108,6 @@ export interface BargeCargoGanttViewProps {
   containerRecordsPath?: string
   title?: string
   subtitle?: string
-  highlightPort?: string
   /** 点击港口停靠区域或装卸货矩形块时的回调 */
   onBarClick?: (ev: GanttEvent) => void
 }
