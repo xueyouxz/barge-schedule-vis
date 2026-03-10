@@ -1,9 +1,8 @@
 .page {
   display: grid;
   grid-template:
-    'header header header' 118px
     'cargo map map' minmax(0, 1fr)
-    'gantt gantt gantt' 312px
+    'gantt gantt gantt' 320px
     / 420px minmax(0, 1fr) 420px;
   gap: 8px;
   width: 1920px;
@@ -11,115 +10,6 @@
   padding: 12px;
   color: var(--color-text);
   background: var(--color-background);
-}
-
-.hero {
-  display: grid;
-  grid-area: header;
-  grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.85fr) 220px;
-  gap: 0.75rem;
-  align-items: stretch;
-  padding: 0.8rem 0.95rem;
-  background: var(--color-background);
-  border: 1px solid var(--color-border-strong);
-}
-
-.heroMain,
-.metricGrid,
-.heroMeta {
-  min-width: 0;
-}
-
-.heroMain {
-  display: grid;
-  gap: 0.24rem;
-  align-content: center;
-}
-
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-  padding: 0;
-  font-size: 0.62rem;
-  font-weight: 700;
-  color: var(--chart-unload);
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-}
-
-.title {
-  font-family: var(--font-body);
-  font-size: 1.72rem;
-  font-weight: 700;
-  line-height: 1.04;
-  color: var(--color-text-strong);
-  letter-spacing: 0;
-}
-
-.description {
-  max-width: 44rem;
-  font-size: 0.76rem;
-  line-height: 1.38;
-  color: var(--color-muted);
-}
-
-.metricGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.4rem;
-  align-content: stretch;
-}
-
-.metricCard {
-  display: grid;
-  gap: 0.12rem;
-  padding: 0.48rem 0.58rem;
-  background: transparent;
-  border: 1px solid var(--chart-border);
-}
-
-.metricLabel {
-  font-size: 0.58rem;
-  font-weight: 700;
-  color: var(--color-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.metricValue {
-  font-size: 1.08rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.15;
-  color: var(--color-text-strong);
-}
-
-.heroMeta {
-  display: grid;
-  gap: 0.28rem;
-  align-content: center;
-  justify-items: end;
-}
-
-.metaPill,
-.metaText {
-  display: inline-flex;
-  align-items: center;
-  min-height: 1.35rem;
-  padding: 0 0.4rem;
-  font-size: 0.62rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  color: var(--color-muted-strong);
-  background: transparent;
-  border: 1px solid var(--chart-border);
-}
-
-.metaPill {
-  color: var(--color-accent);
-  border-color: color-mix(in srgb, var(--color-accent) 36%, var(--chart-border));
 }
 
 .dashboardGrid {
