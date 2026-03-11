@@ -1,0 +1,82 @@
+.tooltip {
+  position: fixed;
+  z-index: 9999;
+  padding: 8px 12px;
+  overflow: hidden;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--color-background, #0f172a) 92%, transparent);
+  backdrop-filter: blur(6px);
+  border: 1px solid color-mix(in srgb, var(--chart-border, #334155) 60%, transparent);
+  border-radius: 6px;
+  box-shadow:
+    0 4px 16px rgb(0 0 0 / 40%),
+    0 1px 4px rgb(0 0 0 / 20%);
+}
+
+.route {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.terminal {
+  padding: 1px 5px;
+  font-family: 'SF Mono', Consolas, Monaco, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--chart-text, #e2e8f0);
+  letter-spacing: 0.04em;
+  background: color-mix(in srgb, var(--chart-surface, #1e293b) 80%, transparent);
+  border-radius: 3px;
+}
+
+.arrow {
+  font-size: 12px;
+  color: var(--chart-unload, #63b3ed);
+}
+
+.names {
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: var(--chart-text-muted, #94a3b8);
+}
+
+.arrowSub {
+  color: var(--chart-unload, #63b3ed);
+}
+
+.count {
+  display: flex;
+  gap: 2px;
+  align-items: baseline;
+}
+
+.countValue {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--chart-unload, #63b3ed);
+}
+
+.countValueSelf {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--chart-load, #68d391);
+}
+
+.selfBadge {
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--chart-load, #68d391);
+  background: color-mix(in srgb, var(--chart-load, #68d391) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--chart-load, #68d391) 35%, transparent);
+  border-radius: 3px;
+}
+
+.countUnit {
+  font-size: 11px;
+  color: var(--chart-text-muted, #94a3b8);
+}

@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import Map, {
   AttributionControl,
   Marker,
   NavigationControl,
   Popup,
-  type MapRef
+  type MapRef,
+  type ViewStateChangeEvent
 } from 'react-map-gl/maplibre'
+import { NingboFlowOverlay } from '../NingboFlowOverlay'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { ViewStateOverlay } from '@/shared/components/ViewStateOverlay/ViewStateOverlay'
 import { resolvePortColor } from '@/shared/lib/portColors'
@@ -46,6 +48,7 @@ export function PortLocationMap({
   const { theme } = useTheme()
   const mapRef = useRef<MapRef | null>(null)
   const [isMapReady, setIsMapReady] = useState(false)
+  const [zoom, setZoom] = useState<number>(MAP_DEFAULTS.zoom)
   const [internalSelectedPortCode, setInternalSelectedPortCode] = useState<string>()
   const { data: ports, isLoading, error } = usePortLocations()
   const effectiveSelectedPortCode = selectedPortCode ?? internalSelectedPortCode
@@ -75,6 +78,10 @@ export function PortLocationMap({
       duration: 0
     })
   }, [isMapReady, ports, selectedPort])
+
+  const handleZoom = useCallback((e: ViewStateChangeEvent) => {
+    setZoom(e.viewState.zoom)
+  }, [])
 
   const handlePortSelect = (portCode: string) => {
     if (onPortSelect) {
@@ -107,6 +114,7 @@ export function PortLocationMap({
           mapLib={maplibregl}
           mapStyle={buildMapStyle(theme)}
           onLoad={() => setIsMapReady(true)}
+          onZoom={handleZoom}
           reuseMaps
           style={{ width: '100%', height: '100%' }}
         >
@@ -157,6 +165,8 @@ export function PortLocationMap({
             </Popup>
           ) : null}
         </Map>
+
+        <NingboFlowOverlay mapRef={mapRef} zoom={zoom} isMapReady={isMapReady} />
 
         <ViewStateOverlay
           overlay

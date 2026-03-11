@@ -4,6 +4,7 @@ import { ViewStateOverlay } from '@/shared/components/ViewStateOverlay/ViewState
 import { useTheme } from '@/shared/theme'
 import { resolvePortColor } from '@/shared/lib/portColors'
 import { usePortCargoByMainlineData } from './usePortCargoByMainlineData'
+import { usePortCargoInputData } from './usePortCargoInputData'
 import type { ContainerLoadType, PortCargoByMainlineViewProps } from './types'
 import {
   BLOCK_GAP,
@@ -49,6 +50,7 @@ function buildContainerCells(
   const count = containers.length
   const orderedContainers: ContainerLoadType[] = [
     ...containers.filter(type => type === 'heavy'),
+    ...containers.filter(type => type === 'danger'),
     ...containers.filter(type => type === 'empty')
   ]
 
@@ -113,13 +115,16 @@ export default function PortCargoByMainlineView({
   height = DEFAULT_VIEW_SIZE.height,
   csvFiles,
   selectedPort,
+  dataMode = 'output',
   onBarClick
 }: PortCargoByMainlineViewProps) {
   const {
     theme,
     tokens: { chart }
   } = useTheme()
-  const { data, loading, error } = usePortCargoByMainlineData(csvFiles)
+  const outputResult = usePortCargoByMainlineData(dataMode === 'output' ? csvFiles : [])
+  const inputResult = usePortCargoInputData(dataMode === 'input' ? csvFiles : [])
+  const { data, loading, error } = dataMode === 'input' ? inputResult : outputResult
 
   const layout = useMemo(() => {
     const maxCount = Math.max(1, ...data.flatMap(row => row.groups.map(group => group.count)))
@@ -233,6 +238,7 @@ export default function PortCargoByMainlineView({
                     blockHeight
                   )
                   const blockColor = resolvePortColor(block.mainlinePort, theme)
+                  const dangerColor = chart.cargoDanger
                   const borderColor = d3Color(blockColor)?.darker(0.6).formatHex() ?? '#374151'
 
                   return (
@@ -255,7 +261,13 @@ export default function PortCargoByMainlineView({
                           y={cell.y}
                           width={cell.width}
                           height={cell.height}
-                          fill={cell.type === 'empty' ? emptyCellFill : blockColor}
+                          fill={
+                            cell.type === 'empty'
+                              ? emptyCellFill
+                              : cell.type === 'danger'
+                                ? dangerColor
+                                : blockColor
+                          }
                           stroke={borderColor}
                           strokeWidth={BLOCK_STYLE.cellStrokeWidth}
                           opacity={

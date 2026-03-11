@@ -63,6 +63,7 @@ export default function HomePage() {
                   width={size.width}
                   height={size.height}
                   selectedPort={activePort}
+                  dataMode='input'
                   onBarClick={portId => handlePortSelection(portId)}
                 />
               )}

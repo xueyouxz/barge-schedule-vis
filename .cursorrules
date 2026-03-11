@@ -1,15 +1,7 @@
-You are working in a React 19 + Vite 7 + TypeScript project.
+# Common Rules
 
-Architecture:
-- App entry, routes and providers live in `src/app/`
-- Features live in `src/features/<name>/`
-- Shared code lives in `src/shared/`
-- Layout shells live in `src/layouts/`
-
-Rules:
-- Use `@/` imports for code under `src/`
-- Default-export page components
-- Use functional components only
-- Prefer CSS Modules for component styling
-- Do not import one feature from another feature directly
-- Run `pnpm lint` after changes
+- 每次代码修改后都需要运行 `pnpm run lint/lint:style` 来确保代码质量和规范
+- 每次完成后都需要生成生成一个 `git add -A && git commit -m "${message}"`命令，其中`${message}`需要清晰描述此次代码变更的内容和实现功能和模块，这个提交命令不需要执行（格式遵循`.commitlint.config.mjs`规范）.
+-  使用中文输出
+-  除非用户需要否则不要创建任何文档
+-  除非用户要求否则不要编写快速启动、运行示例等任何与实际需求无关的代码
