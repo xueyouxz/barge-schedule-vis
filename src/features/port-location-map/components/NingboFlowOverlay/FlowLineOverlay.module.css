@@ -1,0 +1,23 @@
+.arcLabel {
+  font-family: 'SF Mono', Consolas, Monaco, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  text-shadow:
+    0 0 5px var(--color-background, #0f172a),
+    0 0 5px var(--color-background, #0f172a),
+    0 1px 4px rgb(0 0 0 / 90%);
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+.arcLabelSub {
+  font-family: 'SF Mono', Consolas, Monaco, monospace;
+  font-size: 9px;
+  font-weight: 500;
+  text-shadow:
+    0 0 4px var(--color-background, #0f172a),
+    0 1px 3px rgb(0 0 0 / 80%);
+  letter-spacing: 0.03em;
+  pointer-events: none;
+  opacity: 0.75;
+}

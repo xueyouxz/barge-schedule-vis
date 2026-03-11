@@ -1,0 +1,14 @@
+/**
+ * SVG 覆盖层：position: absolute 覆盖整个 .stage 区域。
+ * pointer-events: none 默认穿透，内部弦图 ribbon 通过 style 局部恢复交互。
+ */
+.svgOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}

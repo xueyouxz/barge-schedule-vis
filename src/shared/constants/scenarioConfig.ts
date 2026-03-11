@@ -16,6 +16,8 @@ export interface DataPaths {
   bargeRecords: string
   containerRecords: string
   portLocations: string
+  inputNanjing: string
+  inputTaicang: string
 }
 
 export const SCENES_MANIFEST_PATH = '/data/scenes/index.json'
@@ -44,6 +46,8 @@ export function buildDataPaths(scene: SceneOption | null): DataPaths | null {
     bargeInfos: `${config.outputRoot}/barge_infos.json`,
     bargeRecords: `${config.outputRoot}/barge_records.json`,
     containerRecords: `${config.outputRoot}/container_records.csv`,
-    portLocations: `${config.commonRoot}/port_locations.json`
+    portLocations: `${config.commonRoot}/port_locations.json`,
+    inputNanjing: `${config.root}/input/export/clean_nanjing.csv`,
+    inputTaicang: `${config.root}/input/export/clean_taicang.csv`
   }
 }

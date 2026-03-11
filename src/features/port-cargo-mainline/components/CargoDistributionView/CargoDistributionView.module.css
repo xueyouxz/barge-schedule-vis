@@ -1,0 +1,169 @@
+/* ── CSS 变量（亮色主题） ─────────────────────────────────────────────────── */
+.container {
+  --cargo-dist-accent: #d97a1d;
+  --cargo-dist-port-ring: var(--chart-grid-line-color, #d7dee5);
+  --cargo-dist-port-dot: var(--chart-axis-label-color, #8a949e);
+  --cargo-dist-separator: #fff;
+  --cargo-dist-center-dot: #fff;
+  --cargo-dist-track: #d7dee5;
+  --cargo-dist-hull: #c8c2b8;
+  --cargo-dist-hull-label: #b8b2a6;
+  --cargo-dist-bez-muted: #b0aaa0;
+  --cargo-dist-legend-label: var(--chart-axis-label-color, #8a949e);
+  --cargo-dist-port-text: var(--color-text, #2a3038);
+  --cargo-dist-count-text: var(--chart-axis-label-color, #8a949e);
+
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-body, 'Inter', sans-serif);
+  background: var(--color-surface, #fff);
+}
+
+:global(:root[data-theme='dark']) .container {
+  --cargo-dist-separator: rgb(20 26 34 / 80%);
+  --cargo-dist-center-dot: rgb(30 38 48 / 90%);
+  --cargo-dist-track: rgb(255 255 255 / 12%);
+  --cargo-dist-hull: rgb(255 255 255 / 18%);
+  --cargo-dist-hull-label: rgb(255 255 255 / 28%);
+  --cargo-dist-bez-muted: rgb(255 255 255 / 30%);
+  --cargo-dist-port-ring: rgb(255 255 255 / 25%);
+  --cargo-dist-port-dot: rgb(255 255 255 / 40%);
+}
+
+/* ── 图例区 ───────────────────────────────────────────────────────────────── */
+.legend {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: center;
+  padding: 6px 12px 4px;
+}
+
+.legendLabel {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--cargo-dist-legend-label);
+}
+
+.legendSep {
+  display: block;
+  width: 1px;
+  height: 14px;
+  background: var(--cargo-dist-track);
+}
+
+.legendItem {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  transition: opacity 0.2s;
+}
+
+.legendDot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.legendRing {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 11px;
+  height: 11px;
+  background: transparent;
+  border: 2.5px solid;
+  border-radius: 50%;
+}
+
+.legendText {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary, #555);
+  white-space: nowrap;
+}
+
+/* ── SVG 主图 ──────────────────────────────────────────────────────────────── */
+.svg {
+  display: block;
+  flex: 1 1 0;
+  width: 100%;
+  min-height: 0;
+  overflow: visible;
+}
+
+/* ── 轨道横线 ─────────────────────────────────────────────────────────────── */
+.trackLine {
+  stroke: var(--cargo-dist-track);
+  stroke-width: 1.2;
+}
+
+/* ── 港口节点 ─────────────────────────────────────────────────────────────── */
+.portNode {
+  cursor: pointer;
+  transition: opacity 0.25s;
+}
+
+.portOuterRing {
+  fill: var(--color-surface, #fff);
+}
+
+.portLabel {
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 14px;
+  font-weight: 700;
+  fill: var(--cargo-dist-port-text);
+}
+
+/* ── 分组轮廓椭圆 ─────────────────────────────────────────────────────────── */
+.hullEllipse {
+  stroke: var(--cargo-dist-hull);
+  stroke-dasharray: 6 4;
+  stroke-width: 1;
+  transition: opacity 0.3s;
+}
+
+.hullLabel {
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  fill: var(--cargo-dist-hull-label);
+  transition: opacity 0.3s;
+}
+
+/* ── 贝塞尔连线 ──────────────────────────────────────────────────────────── */
+.bezierLine {
+  transition: opacity 0.35s;
+}
+
+/* ── 饼图节点 ────────────────────────────────────────────────────────────── */
+.pieNode {
+  cursor: pointer;
+  transition: opacity 0.35s;
+}
+
+/* ── 节点标签 ────────────────────────────────────────────────────────────── */
+.nodeLabel {
+  transition: opacity 0.35s;
+}
+
+.destLabel {
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 9px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.countLabel {
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 10px;
+  font-weight: 600;
+  fill: var(--cargo-dist-count-text);
+}

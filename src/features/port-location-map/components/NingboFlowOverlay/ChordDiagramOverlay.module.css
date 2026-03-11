@@ -1,0 +1,24 @@
+.root {
+  /* no transition — position updates via rAF already smooth */
+}
+
+.arcLabel {
+  font-family: 'SF Mono', Consolas, Monaco, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-shadow:
+    0 0 4px var(--color-background, #0f172a),
+    0 1px 3px rgb(0 0 0 / 80%);
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+
+.chordArc {
+  transition: stroke-opacity 0.15s ease;
+}
+
+.targetNode {
+  transition:
+    r 0.15s ease,
+    fill-opacity 0.15s ease;
+}

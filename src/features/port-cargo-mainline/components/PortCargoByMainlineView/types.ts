@@ -3,6 +3,7 @@ export interface PortCargoByMainlineViewProps {
   height?: number
   csvFiles?: string[]
   selectedPort?: string
+  dataMode?: 'output' | 'input'
   onBarClick?: (portId: string, route: string) => void
 }
 
@@ -13,7 +14,15 @@ export interface CsvContainerRow {
   'L/F/E'?: string
 }
 
-export type ContainerLoadType = 'empty' | 'heavy'
+export interface CsvInputRow {
+  TEU?: string
+  起运港码头?: string
+  干线码头?: string
+  'L/F/E'?: string
+  危类?: string
+}
+
+export type ContainerLoadType = 'empty' | 'heavy' | 'danger'
 
 export interface MainlineGroup {
   route: string
