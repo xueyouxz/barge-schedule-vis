@@ -13,56 +13,12 @@
   pointer-events: none;
 }
 
-.segmentDivider {
-  pointer-events: none;
-  stroke: var(--color-background, #0f172a);
-  stroke-opacity: 0.85;
-  stroke-width: 1.5;
-}
-
 .chordArc {
+  transition: stroke-opacity 0.15s ease;
+}
+
+.targetNode {
   transition:
-    stroke-opacity 0.15s ease,
-    stroke-width 0.15s ease;
-}
-
-.chordLabel {
-  font-family: 'SF Mono', Consolas, Monaco, monospace;
-  font-size: 9.5px;
-  font-weight: 700;
-  text-shadow:
-    0 0 4px var(--color-background, #0f172a),
-    0 0 4px var(--color-background, #0f172a),
-    0 1px 3px rgb(0 0 0 / 85%);
-  letter-spacing: 0.03em;
-  pointer-events: none;
-  transition: opacity 0.15s ease;
-}
-
-.centerLabel {
-  font-size: 10px;
-  font-weight: 500;
-  pointer-events: none;
-  text-anchor: middle;
-  fill: var(--chart-text-muted, #94a3b8);
-}
-
-.centerRate {
-  font-size: 17px;
-  font-weight: 700;
-  pointer-events: none;
-  text-anchor: middle;
-  fill: var(--chart-unload, #63b3ed);
-}
-
-.centerSub {
-  font-size: 10px;
-  font-weight: 500;
-  pointer-events: none;
-  text-anchor: middle;
-  fill: var(--chart-text, #e2e8f0);
-}
-
-.centerSubMuted {
-  fill: var(--chart-text-muted, #94a3b8);
+    r 0.15s ease,
+    fill-opacity 0.15s ease;
 }

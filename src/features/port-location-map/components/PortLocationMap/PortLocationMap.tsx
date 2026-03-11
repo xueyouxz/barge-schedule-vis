@@ -9,6 +9,7 @@ import Map, {
   type ViewStateChangeEvent
 } from 'react-map-gl/maplibre'
 import { NingboFlowOverlay } from '../NingboFlowOverlay'
+import { NINGBO_TERMINAL_SET, FLOW_ZOOM_MIN, CHORD_ZOOM_MAX } from '../../constants/terminalConfig'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { ViewStateOverlay } from '@/shared/components/ViewStateOverlay/ViewStateOverlay'
 import { resolvePortColor } from '@/shared/lib/portColors'
@@ -83,6 +84,8 @@ export function PortLocationMap({
     setZoom(e.viewState.zoom)
   }, [])
 
+  const showChordMode = zoom >= FLOW_ZOOM_MIN && zoom < CHORD_ZOOM_MAX
+
   const handlePortSelect = (portCode: string) => {
     if (onPortSelect) {
       onPortSelect(portCode)
@@ -125,24 +128,28 @@ export function PortLocationMap({
             position='bottom-left'
           />
 
-          {ports.map(port => (
-            <Marker key={port.code} anchor='center' longitude={port.lon} latitude={port.lat}>
-              <button
-                aria-label={`${port.name} (${port.code})`}
-                className={`${styles.marker} ${effectiveSelectedPortCode === port.code ? styles.markerActive : ''}`.trim()}
-                onClick={() => handlePortSelect(port.code)}
-                style={
-                  {
-                    '--marker-port-color': resolvePortColor(port.code, theme)
-                  } as CSSProperties
-                }
-                type='button'
-              >
-                <span className={styles.markerDot} />
-                <span className={styles.markerLabel}>{port.code}</span>
-              </button>
-            </Marker>
-          ))}
+          {ports.map(port => {
+            // 弦图模式下隐藏宁波港内部码头的位置标记（由弦图统一展示）
+            if (showChordMode && NINGBO_TERMINAL_SET.has(port.code)) return null
+            return (
+              <Marker key={port.code} anchor='center' longitude={port.lon} latitude={port.lat}>
+                <button
+                  aria-label={`${port.name} (${port.code})`}
+                  className={`${styles.marker} ${effectiveSelectedPortCode === port.code ? styles.markerActive : ''}`.trim()}
+                  onClick={() => handlePortSelect(port.code)}
+                  style={
+                    {
+                      '--marker-port-color': resolvePortColor(port.code, theme)
+                    } as CSSProperties
+                  }
+                  type='button'
+                >
+                  <span className={styles.markerDot} />
+                  <span className={styles.markerLabel}>{port.code}</span>
+                </button>
+              </Marker>
+            )
+          })}
 
           {selectedPort ? (
             <Popup

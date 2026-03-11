@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useAppDispatch, useAppSelector } from '@/shared/lib/hooks'
 import { toggleSelectedPort, setSelectedPort } from '@/shared/lib/dashboardFilterSlice'
@@ -8,7 +9,7 @@ import { WidgetHeader } from '@/shared/components/WidgetHeader/WidgetHeader'
 import { APP_NAME } from '@/shared/constants/app.constants'
 import { useContainerSize } from '@/shared/lib/useContainerSize'
 import { BargeCargoGanttView, type InteractiveEvent } from '@/features/barge-cargo-gantt'
-import { PortCargoByMainlineView } from '@/features/port-cargo-mainline'
+import { PortCargoByMainlineView, CargoDistributionView } from '@/features/port-cargo-mainline'
 import { PortLocationMap } from '@/features/port-location-map'
 import styles from './HomePage.module.css'
 
@@ -27,9 +28,17 @@ function MeasuredPanel({ className, children }: MeasuredPanelProps) {
   )
 }
 
+type CargoViewTab = 'mainline' | 'distribution'
+
+const CARGO_TABS: { id: CargoViewTab; label: string }[] = [
+  { id: 'mainline', label: '干线分布' },
+  { id: 'distribution', label: '力导向分布' }
+]
+
 export default function HomePage() {
   const dispatch = useAppDispatch()
   const activePort = useAppSelector(state => state.dashboardFilter.selectedPort) ?? undefined
+  const [cargoTab, setCargoTab] = useState<CargoViewTab>('mainline')
 
   const handlePortSelection = (portCode: string) => {
     dispatch(toggleSelectedPort(portCode))
@@ -56,17 +65,40 @@ export default function HomePage() {
           </section>
 
           <section className={[styles.panelCard, styles.cargoPanel].join(' ')}>
-            <WidgetHeader title='箱量分布视图' />
+            <WidgetHeader
+              title='箱量分布视图'
+              actions={
+                <div className={styles.cargoTabs}>
+                  {CARGO_TABS.map(tab => (
+                    <button
+                      key={tab.id}
+                      className={[
+                        styles.cargoTabBtn,
+                        cargoTab === tab.id ? styles.cargoTabBtnActive : ''
+                      ].join(' ')}
+                      onClick={() => setCargoTab(tab.id)}
+                      type='button'
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              }
+            />
             <MeasuredPanel className={styles.panelBody}>
-              {size => (
-                <PortCargoByMainlineView
-                  width={size.width}
-                  height={size.height}
-                  selectedPort={activePort}
-                  dataMode='input'
-                  onBarClick={portId => handlePortSelection(portId)}
-                />
-              )}
+              {size =>
+                cargoTab === 'mainline' ? (
+                  <PortCargoByMainlineView
+                    width={size.width}
+                    height={size.height}
+                    selectedPort={activePort}
+                    dataMode='input'
+                    onBarClick={portId => handlePortSelection(portId)}
+                  />
+                ) : (
+                  <CargoDistributionView dataMode='input' />
+                )
+              }
             </MeasuredPanel>
           </section>
 

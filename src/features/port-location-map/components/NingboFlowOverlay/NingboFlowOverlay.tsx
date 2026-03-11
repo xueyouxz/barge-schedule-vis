@@ -12,10 +12,21 @@ interface NingboFlowOverlayProps {
   isMapReady: boolean
 }
 
-/** 根据 zoom 在 [FLOW_ZOOM_MIN, CHORD_ZOOM_MAX] 区间内线性插值弦图半径 [72, 152] px */
+/**
+ * 弦图半径随 zoom 线性插值。
+ *
+ * ┌─────────────────────────────────────────────────────────┐
+ * │  用户可调参数（修改这两个值控制弦图大小范围）           │
+ * │  CHORD_RADIUS_MIN  — zoom = FLOW_ZOOM_MIN 时的半径(px) │
+ * │  CHORD_RADIUS_MAX  — zoom = CHORD_ZOOM_MAX 时的半径(px)│
+ * └─────────────────────────────────────────────────────────┘
+ */
+const CHORD_RADIUS_MIN = 32 // ← 最小半径（px），zoom = 10 时
+const CHORD_RADIUS_MAX = 72 // ← 最大半径（px），zoom = 12.5 时
+
 function interpolateRadius(zoom: number): number {
   const t = Math.max(0, Math.min(1, (zoom - FLOW_ZOOM_MIN) / (CHORD_ZOOM_MAX - FLOW_ZOOM_MIN)))
-  return 72 + t * 80
+  return CHORD_RADIUS_MIN + t * (CHORD_RADIUS_MAX - CHORD_RADIUS_MIN)
 }
 
 /**
